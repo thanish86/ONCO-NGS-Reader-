@@ -1,73 +1,77 @@
-# Onco NGS Reader — Stage 1 frontend prototype
+# Onco NGS Reader — Stage 2 evidence-connected prototype
 
 An educational decision-support web app that helps medical oncologists and molecular pathologists work through cancer NGS reports. It is **not a medical device**, does not replace the laboratory report or a molecular tumour board, and does not prescribe.
 
-Principle: **make it clinically trustworthy before making it clinically autonomous.** Every interpretation separates verified evidence from missing or unverified information.
+Principle: **make it clinically trustworthy before making it clinically autonomous.** Every interpretation separates verified evidence from missing or unverified information, and every outside fact carries its source, time and question.
 
-## How to run it (no programming needed)
+## Three ways to run it (no programming needed for the first)
 
-1. Download or copy these three files into one folder: `index.html`, `style.css`, `script.js`.
-2. Double-click **`index.html`**. It opens in your web browser (Chrome, Edge, Safari or Firefox). That is all.
-3. Nothing is installed and no internet connection is needed. Nothing you type is sent anywhere.
+**1. Simplest — open the file.** Keep the whole project folder together and double-click `index.html`. Everything works from disk, including the live look-ups if you switch them on (except OncoKB, which also needs the proxy below). Nothing is sent anywhere unless you switch on live look-ups.
 
-Tip: start on the **Dashboard**, click **Try a sample case**, tick the confirmation box on the Upload page, then explore the other pages.
+**2. With the local proxy (needed only for OncoKB).** Install Node.js 18+, then in a terminal in the project folder:
 
-## The seven pages
+```
+ONCOKB_API_TOKEN=your-token node server/server.js          # Mac / Linux
+set ONCOKB_API_TOKEN=your-token && node server/server.js   # Windows
+```
+
+Open `http://127.0.0.1:8787/`. The proxy keeps your licensed OncoKB token on your computer, never in the web page, and serves the app from the same address. Without a token the app still runs.
+
+**3. Hosted preview (a single page).** `python3 tools/make_hosted.py` builds one file, `hosted/onco-ngs-reader-hosted.html`. A hosting page blocks outside connections, printing and downloads, so in that mode live look-ups, Print and Download are switched off with a clear message. Everything else works.
+
+## The eight pages
 
 | # | Page | What it does |
 |---|------|--------------|
-| 1 | Dashboard | Overview, fictional sample cases, pearl of the day, and an honest "what works / what needs a backend" table |
-| 2 | Upload NGS Report | Drag-and-drop PDF viewer (local only), manual entry, editable findings, missing/uncertain flags, **clinician confirmation gate** |
-| 3 | Variant Interpreter | Gene biology, HGVS decoding, separate pathogenicity / oncogenicity / actionability lenses, AMP/ASCO/CAP, ESCAT, OncoKB, ClinVar, ClinGen/CIViC, FDA/EMA sections |
-| 4 | Actionability & Targeted Therapies | Treatment options with an explicit status, a check against your tumour type and disease setting, immunotherapy biomarkers, resistance, trial search links |
-| 5 | Molecular Learning Centre | 13 topics (simple → advanced), memory hooks, exam traps, eponyms, 3 calculators, HGVS decoder, 31 flash-cards, 12-question quiz |
-| 6 | Evidence Library | 92 sources (76 PubMed-verified papers + 16 websites); your own access-date record |
-| 7 | Molecular Tumour Board Summary | Print-ready summary, copy as plain text |
+| 1 | Dashboard | Overview, fictional sample cases, pearl of the day, and an honest "what works / what needs a back end" table |
+| 2 | Upload NGS Report | PDF viewer (canvas, local only), **experimental text extraction that only proposes**, manual entry, missing/uncertain flags, per-item verification, **clinician confirmation gate** |
+| 3 | Variant Interpreter | Gene biology, HGVS decoding, separate pathogenicity / oncogenicity / actionability lenses, AMP/ASCO/CAP, ESCAT, OncoKB, ClinVar (curated and optionally live), FDA/EMA |
+| 4 | Actionability & Targeted Therapies | Options with explicit status, tumour-type and setting fit, on-demand FDA label text, live trial search, immunotherapy biomarkers, resistance |
+| 5 | Molecular Learning Centre | 13 topics (simple → advanced), memory hooks, exam traps, eponyms, calculators, HGVS decoder, 31 flash-cards, 12-question quiz |
+| 6 | Evidence Library | 97 sources (76 PubMed-verified papers + 21 websites); your own access-date record |
+| 7 | Molecular Tumour Board Summary | Print-ready summary with a data-provenance section and audit-chain reference; copy as text |
+| 8 | Connections & Audit | Opt-in live look-ups (what is sent is listed), connection tests, OncoKB proxy setting, tamper-evident audit trail, passphrase-protected case files |
 
-## What works today, and what does not
+## What Stage 2 added
 
-| Feature | Status |
+- **Live look-ups (opt-in, local use):** NCBI ClinVar (each classification type shown separately: germline, somatic clinical impact, oncogenicity; review stars; only records whose *name* matches the entered variant are shown as matches), NCBI PubMed, ClinicalTrials.gov (recruiting studies), openFDA label text with effective date, and OncoKB through the local proxy. Every result shows the retrieval time and the exact question asked. If a service cannot be reached, the app says so and shows nothing in its place. Library tiers, clinician-entered records and live results are always labelled separately.
+- **PDF extraction (experimental):** reads selectable text with the bundled pdf.js, proposes genes, variants, VAF, depth, fusions, copy number and case-level items (TMB, MSI/MMR, HRD, PD-L1, tumour content, specimen, cancer type). Negated statements ("not detected", "wild type", "no mutation") are never proposed. You choose what to add; each added item stays "extracted — verify" until you mark it checked, and findings cannot be confirmed until all are verified. Text is held in memory only; file names and source lines are never saved or logged.
+- **Audit trail:** hash-chained (SHA-256) record of actions, with a Verify button that detects altered, removed or re-linked entries. No patient identifiers, no file names. Exportable.
+- **Protected case files:** AES-256-GCM with a PBKDF2-SHA-256 key from a passphrase you choose (cannot be recovered). Restoring a file always clears the confirmation.
+- **Hosted-safe behaviours:** in-page two-step confirmation for deletes and clearing (browser pop-ups are blocked in some hosts), in-memory navigation, canvas PDF rendering.
+
+## What works, what was tested, what is not done
+
+| Area | State |
 |---|---|
-| Manual case and variant entry, editing, validation | Working |
-| PDF drag-and-drop and side-by-side viewing | Working (the file never leaves your browser) |
-| Reading variants **out of** the PDF | **Not implemented** — needs a validated parser/OCR on secure infrastructure (Stage 2) |
-| Interpretation of ~48 genes / 36 rules | Working (hand-curated; everything else is shown as "not curated") |
-| AMP/ASCO/CAP, ESCAT, OncoKB tiers | Partly: curated snapshot only where confident; blank otherwise; **verify at the source** |
-| Live ClinVar / ClinGen / CIViC / COSMIC / CGI / OncoKB look-ups | **Not implemented** — the app builds search links and lets you record what you found, with the date |
-| FDA status | Curated wording for listed drugs. **EMA is not curated** |
-| Guideline-supported status (NCCN/ESMO) | Deliberately not assigned (text is proprietary / changes often) |
-| Clinical-trial matching | Search links to ClinicalTrials.gov only |
-| AI interpretation | Not built, by design |
-| Accounts, audit trail, secure patient storage | Not implemented — required before any real patient data |
+| Manual entry, interpretation (48 genes, 36 rules), summary, learning content | Working; tested end to end on six fictional cases |
+| PDF extraction | Tested on **three synthetic fictional PDFs** (table, narrative, scanned image) and on pure-text cases including negation. **Real-world sensitivity and error rate are unknown.** No OCR: scanned reports yield a "no text found" message |
+| Live connectors | Built and tested against **recorded response shapes written from documentation**. The real services were **not reachable** where this was built, so **they have not been run against ClinVar, PubMed, ClinicalTrials.gov, openFDA or OncoKB themselves.** Run `tests/` against the live services and check results before relying on them |
+| OncoKB | Proxy tested against a mock upstream; needs your own token and licence terms |
+| CIViC, ClinGen, COSMIC, Cancer Genome Interpreter | No connector. Search links and a record-your-own-look-up form |
+| EMA status; guideline (NCCN/ESMO) status | Not curated, by design |
+| Accounts, central database, role-based access, institutional retention, OCR, clinical validation | **Not built.** These need hosting, identity and governance. Do not use real patient data until they exist and your institution has approved the setup |
 
-## Safety behaviour built into the app
+## Safety behaviour
 
-- It never says it queried a database it did not query.
-- No entry in the library means "not curated", never a guess.
-- Pathogenicity (germline), oncogenicity (somatic) and actionability are shown separately.
-- Evidence from another tumour type is labelled as such and "does not automatically apply".
-- Some approvals are germline-only (e.g. olaparib in breast and pancreatic cancer): a tumour-only finding is shown as **"actionable only if germline confirmed"**.
-- Flags for possible germline origin, possible clonal haematopoiesis (CHIP), low depth, low VAF, missing transcript, and low tumour purity.
-- Interpretation pages stay locked until you confirm the findings; **any edit clears the confirmation**.
-- Data is kept in session storage only (erased when the tab closes). Use a neutral case label, never patient identifiers.
-
-## How the evidence was checked
-
-- **Papers:** every PMID and DOI in the Evidence Library was matched in PubMed on 2026-10-09 (title, journal, year, volume, first page). Trial numbers quoted in the app (PFS, OS, ORR, hazard ratios) were checked against the PubMed abstracts; figures that could not be confirmed there were removed.
-- **Websites:** the organisation addresses were **not live-checked** and are labelled that way.
-- **Tier assignments and approvals:** written by hand. ESCAT tiers are included only where the developer was highly confident; OncoKB levels are derived from the published level definitions plus FDA approval and may differ from the current OncoKB listing. A clinician or molecular pathologist should spot-check the curated library (`RULES` in `script.js`) before relying on it.
+- Never claims a database was queried unless it actually was, and shows when.
+- No curated entry means "not curated", never a guess. ESCAT tiers are shown only where the developer was highly confident; OncoKB levels in the library are derived from published level definitions plus FDA approval and may differ from the live listing.
+- Pathogenicity (germline), oncogenicity (somatic) and actionability are shown separately; evidence from another tumour type is labelled "does not automatically apply"; germline-only approvals show as "actionable only if germline confirmed".
+- Interpretation stays locked until you confirm the findings; any edit clears the confirmation.
+- Session storage only (erased when the tab closes). Use a neutral case label. Never type patient identifiers.
 
 ## Where things live
 
-- `index.html` — the page skeleton (forms, headings, empty areas)
-- `style.css` — colours, fonts, spacing; the colours to change are in the `:root` block at the top
-- `script.js` — all behaviour, in numbered, commented sections: helpers → evidence library → gene library → interpretation rules → biomarkers → learning content → sample cases → state → logic → page renderers → start-up
+- `index.html` — the page skeleton · `style.css` — the look (colours at the top) · `script.js` — all behaviour, in numbered, commented sections
+- `vendor/pdfjs/` — bundled PDF library (Apache-2.0); keep the folder next to `index.html`
+- `server/server.js` — optional local proxy (no dependencies)
+- `tools/make_hosted.py` — builds the single-file hosted page
+- `tests/` — developer checks (see `tests/README.md`)
 
-## Stage 2 (evidence-connected clinical application)
+## Still to do before any clinical use
 
-1. Server-side integrations: ClinVar via NCBI; ClinGen; CIViC; openFDA/Drugs@FDA; PubMed — with caching, versioning and the retrieval date shown beside every item.
-2. OncoKB: apply for an API token and licence terms suitable for clinical-reporting use before using its data in any report.
-3. Validated PDF extraction (with OCR), with mandatory human verification of every extracted field.
-4. Secure patient-data handling: authentication, encryption, consent, audit trail, data-retention policy.
-5. Auditable, versioned interpretation workflow with clinician sign-off and a change history.
-6. Independent clinical review and validation of the curated rule library.
+1. Spot-check the curated rule library with a molecular pathologist; validate extraction on real, de-identified reports with measured sensitivity and error rates.
+2. Run the live connectors against the real services, add caching, versioning and change monitoring.
+3. Obtain OncoKB access and agree its terms for clinical-reporting use.
+4. Add OCR, CIViC/ClinGen connectors, and a server-side, access-controlled, audited store with sign-in and institutional governance.
+5. Independent clinical validation and a documented change-control process.

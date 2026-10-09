@@ -1,0 +1,40 @@
+// Hosted single-file build. Run: python3 tools/make_hosted.py && node tests/make-hosted-wrapper.js && node tests/hosted-build.e2e.test.js
+const ROOT = require('path').resolve(__dirname, '..');
+const SHOTS = require('os').tmpdir();
+const { chromium } = require('playwright');
+let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log('  ✗ FAIL:', m); } else console.log('  ✓', m); };
+(async () => {
+  const b = await chromium.launch({ args: ['--no-sandbox'] });
+  const page = await (await b.newContext({ viewport: { width: 1300, height: 950 } })).newPage();
+  const errs = []; page.on('pageerror', (e) => errs.push(e.message)); page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
+  let outside = 0; await page.route(/^https?:/, (r) => { outside++; r.abort(); });
+  let dialogs = 0; page.on('dialog', (d) => { dialogs++; d.dismiss(); });
+  await page.goto('file://' + ROOT + '/hosted/wrapped-for-test.html');
+  await page.waitForSelector('#dashboardRoot .hero');
+  ok(true, 'hosted page boots (init ran)');
+  ok(await page.evaluate(() => HOSTED === true && typeof pdfjsLib !== 'undefined' && typeof window.ONCO_PDF_WORKER_SRC === 'string' && window.ONCO_PDF_WORKER_SRC.startsWith('blob:')), 'hosted flag on, pdf.js present, worker is a blob URL');
+  await page.click('#mainNav a[data-page="upload"]');
+  ok(await page.$eval('#page-upload', (e) => !e.hidden) && (await page.evaluate(() => location.hash)) === '', 'navigation works through in-memory routing without touching location.hash');
+  await page.setInputFiles('#fileInput', __dirname + '/fixtures/reportA-table.pdf');
+  await page.waitForSelector('#pdfCanvas', { timeout: 20000 });
+  await page.waitForFunction(() => { const c = document.querySelector('#pdfCanvas'); if (!c || c.width < 50) return false; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; for (let i = 0; i < d.length; i += 400) if (d[i] < 200) return true; return false; }, null, { timeout: 20000 });
+  ok(true, 'PDF page rendered in the hosted build (blob worker)');
+  await page.click('[data-action="runExtract"]'); await page.waitForSelector('#extractResult table', { timeout: 20000 });
+  ok((await page.$$('#extractResult [data-cand]')).length >= 5, 'extraction works in the hosted build');
+  await page.click('[data-action="selectAllCands"]'); await page.click('[data-action="addCands"]');
+  for (let i = 0, n = (await page.$$('[data-action="verifyVariant"]')).length; i < n; i++) await page.click('[data-action="verifyVariant"] >> nth=0');
+  for (let i = 0, n = (await page.$$('[data-action="applyCaseSug"]')).length; i < n; i++) await page.click('[data-action="applyCaseSug"] >> nth=0');
+  await page.check('#confirmCheck'); await page.click('#confirmBtn');
+  for (const p of ['interpreter', 'actionability', 'summary', 'connect', 'learn', 'evidence', 'dashboard']) { await page.click(`#mainNav a[data-page="${p}"]`); await page.waitForTimeout(150); }
+  await page.click('#mainNav a[data-page="summary"]'); await page.waitForSelector('.summary-doc');
+  ok(/chain intact/.test(await page.$eval('.summary-doc', (e) => e.textContent)), 'summary generated from extracted + verified findings');
+  ok(await page.$eval('[data-action="printSummary"]', (e) => e.hidden), 'print button hidden in hosted mode');
+  ok(outside === 0, `no outside network request attempted (${outside})`);
+  ok(dialogs === 0, 'no browser dialogs used');
+  ok(errs.length === 0, 'no errors: ' + JSON.stringify(errs));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.click('#menuToggle'); await page.waitForTimeout(250);
+  ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'hosted build: no horizontal overflow at phone width');
+  await b.close();
+  console.log(fails ? `\n${fails} FAILURE(S)` : '\nALL PASSED');
+})().catch((e) => { console.error('CRASH', e); process.exit(1); });

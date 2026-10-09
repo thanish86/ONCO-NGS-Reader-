@@ -116,6 +116,7 @@ const REFS = [
   { id: 'cosmic', cat: 'Knowledge bases & databases', kind: 'site', title: 'COSMIC — Catalogue Of Somatic Mutations In Cancer', by: 'Wellcome Sanger Institute', src: 'cancer.sanger.ac.uk/cosmic', url: 'https://cancer.sanger.ac.uk/cosmic', version: 'Release-versioned', note: 'Free for academic non-commercial use after registration; a commercial licence is required otherwise.' },
   { id: 'cgi_paper', cat: 'Knowledge bases & databases', kind: 'paper', title: 'Cancer Genome Interpreter annotates the biological and clinical relevance of tumor alterations', by: 'Tamborero D et al.', src: 'Genome Med', year: 2018, vol: '10', page: '25', pmid: '29592813', doi: '10.1186/s13073-018-0531-8', version: '2018 description', note: 'Annotates driver status and biomarker evidence of tumour alterations.' },
   { id: 'cgi', cat: 'Knowledge bases & databases', kind: 'site', title: 'Cancer Genome Interpreter (CGI)', by: 'Barcelona Biomedical Genomics Lab / IRB Barcelona', src: 'cancergenomeinterpreter.org', url: 'https://www.cancergenomeinterpreter.org/', version: 'Check the site for the current version', note: 'Web tool; upload of identifiable patient data to third-party tools needs consent and governance.' },
+  { id: 'ncbi_eutils', cat: 'Knowledge bases & databases', kind: 'site', title: 'NCBI E-utilities (programmatic access to ClinVar and PubMed)', by: 'NCBI, National Library of Medicine', src: 'ncbi.nlm.nih.gov/books', url: 'https://www.ncbi.nlm.nih.gov/books/NBK25497/', version: 'Documentation page', note: 'Used by the optional live look-ups (esearch / esummary). Asks for modest request rates (the app waits ≥0.4 s between calls) and a tool name.' },
   { id: 'gnomad', cat: 'Knowledge bases & databases', kind: 'site', title: 'gnomAD — Genome Aggregation Database', by: 'Broad Institute & collaborators', src: 'gnomad.broadinstitute.org', url: 'https://gnomad.broadinstitute.org/', version: 'Release-versioned', note: 'Population allele frequencies; a variant common in healthy populations is unlikely to be a high-penetrance cancer variant.' },
 
   /* ---- Regulatory & trial registries ---- */
@@ -123,6 +124,10 @@ const REFS = [
   { id: 'fda_cdx', cat: 'Regulatory & trial registries', kind: 'site', title: 'List of Cleared or Approved Companion Diagnostic Devices', by: 'US Food and Drug Administration', src: 'fda.gov', url: 'https://www.fda.gov/medical-devices/in-vitro-diagnostics/list-cleared-or-approved-companion-diagnostic-devices-in-vitro-and-imaging-tools', version: 'Updated by FDA', note: 'Which tests are approved for which biomarker–drug pairs.' },
   { id: 'fda_pgx', cat: 'Regulatory & trial registries', kind: 'site', title: 'Table of Pharmacogenomic Biomarkers in Drug Labeling', by: 'US Food and Drug Administration', src: 'fda.gov', url: 'https://www.fda.gov/drugs/science-and-research-drugs/table-pharmacogenomic-biomarkers-drug-labeling', version: 'Updated by FDA', note: 'Biomarker statements in FDA labels.' },
   { id: 'ema', cat: 'Regulatory & trial registries', kind: 'site', title: 'EMA — Medicines (EPAR product information)', by: 'European Medicines Agency', src: 'ema.europa.eu', url: 'https://www.ema.europa.eu/en/medicines', version: 'Product-specific', note: 'EU approval status and indications can differ from the FDA. This prototype does NOT curate EMA status: check the EPAR.' },
+  { id: 'ctgov_api', cat: 'Regulatory & trial registries', kind: 'site', title: 'ClinicalTrials.gov API (v2) documentation', by: 'US National Library of Medicine', src: 'clinicaltrials.gov', url: 'https://clinicaltrials.gov/data-api/api', version: 'API v2', note: 'Used by the optional live trial search (recruiting studies only). No eligibility matching is done.' },
+  { id: 'openfda', cat: 'Regulatory & trial registries', kind: 'site', title: 'openFDA drug label API', by: 'US Food and Drug Administration', src: 'open.fda.gov', url: 'https://open.fda.gov/apis/drug/label/', version: 'Label-specific effective dates are shown with each result', note: 'Used by the optional on-demand label check. Label text is shown verbatim, with its effective date.' },
+  { id: 'oncokb_api', cat: 'Regulatory & trial registries', kind: 'site', title: 'OncoKB API access and licensing', by: 'Memorial Sloan Kettering Cancer Center', src: 'oncokb.org', url: 'https://www.oncokb.org/api-access', version: 'Terms are set by OncoKB', note: 'A token and licence terms are required for API use and for clinical reporting. The app reaches OncoKB only through your own local proxy.' },
+  { id: 'pdfjs', cat: 'Foundations & nomenclature', kind: 'site', title: 'pdf.js — PDF rendering and text extraction library', by: 'Mozilla and contributors (Apache-2.0)', src: 'mozilla.github.io/pdf.js', url: 'https://mozilla.github.io/pdf.js/', version: 'Bundled version 3.11.174', note: 'Opens PDFs inside your browser and returns the selectable text used by the experimental extraction.' },
   { id: 'ctgov', cat: 'Regulatory & trial registries', kind: 'site', title: 'ClinicalTrials.gov', by: 'US National Library of Medicine', src: 'clinicaltrials.gov', url: 'https://clinicaltrials.gov/', version: 'Live registry', note: 'The app builds search links only; it does not retrieve or match trials.' },
 
   /* ---- NGS methods & biomarkers ---- */
@@ -1783,7 +1788,8 @@ const emptyLookups = () => ({
 });
 const emptyVariant = () => ({
   id: uid(), gene: '', variant: '', hgvsC: '', transcript: '', type: '', vaf: '', depth: '',
-  origin: 'unknown', partner: '', cn: '', reported: '', uncertain: [], lookups: emptyLookups()
+  origin: 'unknown', partner: '', cn: '', reported: '', uncertain: [], lookups: emptyLookups(),
+  src: 'manual', verified: true, page: '', snippet: ''   // src 'extracted' = proposed from a PDF; must be verified by a clinician
 });
 
 const state = {
@@ -1799,12 +1805,15 @@ const state = {
     learnTab: 'topics', learnCat: 'All', learnSearch: '', cardCat: 'All', cardSearch: '',
     evSearch: '', evCat: 'All', evUsed: false
   },
-  file: { name: '', size: 0, valid: null, url: '' }
+  file: { name: '', size: 0, valid: null, url: '', pages: 0 },
+  live: { enabled: false, oncokbUrl: '', status: {}, results: {} },   // Stage 2: live look-ups (opt-in, per session)
+  extract: null                                                         // Stage 2: PDF proposals (memory only, never saved)
 };
 
 function saveState() {
   store.set('sessionStorage', SESSION_KEY, {
-    case: state.case, variants: state.variants, confirmed: state.confirmed, confirmedAt: state.confirmedAt,
+    case: state.case, variants: state.variants.map((v) => { const c = Object.assign({}, v); delete c.snippet; return c; }),
+    confirmed: state.confirmed, confirmedAt: state.confirmedAt, liveResults: state.live.results,
     sampleId: state.sampleId, boardNotes: state.boardNotes, preparedBy: state.preparedBy, reviewedBy: state.reviewedBy
   });
 }
@@ -1817,12 +1826,15 @@ function loadState() {
     : [];
   state.confirmed = !!s.confirmed; state.confirmedAt = s.confirmedAt || null;
   state.sampleId = s.sampleId || null;
+  state.live.results = s.liveResults && typeof s.liveResults === 'object' ? s.liveResults : {};
   state.boardNotes = s.boardNotes || ''; state.preparedBy = s.preparedBy || ''; state.reviewedBy = s.reviewedBy || '';
 }
 /** Any change to report data must clear the confirmation. */
 function dataChanged() {
+  const was = state.confirmed;
   state.confirmed = false; state.confirmedAt = null;
   saveState(); renderCaseStrip();
+  auditThrottled('edit', 'case-edited', was ? 'details changed; confirmation cleared' : 'details changed', 20000);
 }
 
 /* =====================================================================
@@ -2094,6 +2106,7 @@ function variantFlags(v, cs = state.case) {
     flags.push({ level: 'warn', text: `Possible clonal haematopoiesis (CHIP): ${nv.gene} variants at low VAF in plasma are often derived from blood cells, not the tumour. Matched white-blood-cell sequencing would resolve this.` });
   }
   if (cs.specimen === 'liquid' && (isCNA || isSV)) flags.push({ level: 'info', text: 'Plasma assays detect copy-number changes and fusions less sensitively than tissue; confirm in tissue if the result would change management.' });
+  if (v.src === 'extracted') flags.push({ level: v.verified ? 'info' : 'warn', text: v.verified ? 'Extracted from the PDF and verified by the clinician.' : `Extracted from the PDF by a heuristic${v.page ? ' (page ' + v.page + ')' : ''} and NOT yet verified. Compare it with the source page.` });
   if (v.reported) flags.push({ level: 'info', text: `Report-stated classification (typed by you, not verified by this app): “${v.reported}”.` });
   return flags;
 }
@@ -2111,6 +2124,8 @@ function caseChecks(cs = state.case, variants = state.variants) {
   if (cs.specimen === 'tissue' && num(cs.purity) !== null && num(cs.purity) < 20) add('warn', `Tumour purity ${cs.purity}% is low: false negatives are possible (check the assay’s minimum tumour content).`);
   if (cs.germline === 'not-tested' && variants.some((v) => GERMLINE_PRONE.includes(normGene(v.gene)))) add('warn', 'A hereditary-cancer gene is reported but germline testing status is “not done”.');
   if (!variants.length) add('missing', 'No variants entered yet.');
+  const unver = variants.filter((v) => v.src === 'extracted' && !v.verified).length;
+  if (unver) add('warn', `${unver} extracted entr${unver === 1 ? 'y has' : 'ies have'} not yet been verified against the PDF. Verify each one before confirming.`);
   const unknownGenes = variants.filter((v) => normGene(v.gene) && !GENES[normGene(v.gene)]);
   if (unknownGenes.length) add('info', `${unknownGenes.length} variant(s) are in genes outside the prototype library: they are listed but not interpreted.`);
   const flagged = variants.filter((v) => variantFlags(v, cs).some((f) => f.level === 'missing' || f.level === 'uncertain' || f.level === 'warn')).length;
@@ -2160,6 +2175,792 @@ function lodVaf(D, k, target = 0.95) {
     if (detectionProbability(D, mid, k) >= target) hi = mid; else lo = mid;
   }
   return hi;
+}
+
+/* =====================================================================
+   12. STAGE 2 — AUDIT TRAIL, LIVE LOOK-UPS, EVIDENCE CONNECTORS
+   ---------------------------------------------------------------------
+   PLAIN-LANGUAGE GUIDE
+   * AUDIT TRAIL: every important action (loading a case, editing a
+     variant, confirming, running a look-up, exporting) is written to a
+     list. Each entry carries a fingerprint (SHA-256 hash) of the entry
+     before it, so changing or deleting an old entry breaks the chain and
+     the "Verify" button on the Connect page shows it. The list lives in
+     this browser tab only and holds NO patient identifiers.
+   * LIVE LOOK-UPS: when YOU switch them on, the app can ask public
+     services (NCBI ClinVar/PubMed, ClinicalTrials.gov, openFDA) a
+     question. What is sent is shown first: gene symbols, variant names,
+     a tumour-type label, and drug names. Answers are shown with the
+     time they were retrieved and the exact question asked.
+   * If a service cannot be reached the app says so and shows NOTHING in
+     its place. It never fills a gap with invented data.
+   * OncoKB is licensed: its token must never sit in a web page. It is
+     only reachable through the small local proxy in /server, which
+     keeps the token on your own computer.
+   ===================================================================== */
+const APP_VERSION = '2.0.0';
+/** Set to true by the hosted build (the hosting page blocks outside connections, printing and downloads). */
+const HOSTED = !!(typeof window !== 'undefined' && window.ONCO_HOSTED);
+const AUDIT_KEY = 'onco-ngs-reader/audit/v1';
+const LIVE_CFG_KEY = 'onco-ngs-reader/live-config';
+
+/* ---------- SHA-256 (pure JavaScript, so it works everywhere and in order) ---------- */
+const sha256 = (() => {
+  const K = [], H0 = [];
+  const frac = (x) => Math.floor((x - Math.floor(x)) * 4294967296);
+  for (let n = 2, c = 0; c < 64; n++) {
+    let prime = true;
+    for (let i = 2; i * i <= n; i++) if (n % i === 0) { prime = false; break; }
+    if (!prime) continue;
+    if (c < 8) H0[c] = frac(Math.sqrt(n));
+    K[c++] = frac(Math.cbrt(n));
+  }
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  return function sha256(str) {
+    const bytes = new TextEncoder().encode(String(str));
+    const l = bytes.length, bitLen = l * 8, total = ((l + 9 + 63) >> 6) << 6;
+    const buf = new Uint8Array(total); buf.set(bytes); buf[l] = 0x80;
+    const dv = new DataView(buf.buffer);
+    dv.setUint32(total - 8, Math.floor(bitLen / 4294967296)); dv.setUint32(total - 4, bitLen >>> 0);
+    const H = H0.slice(), w = new Array(64);
+    for (let off = 0; off < total; off += 64) {
+      for (let i = 0; i < 16; i++) w[i] = dv.getUint32(off + i * 4);
+      for (let i = 16; i < 64; i++) {
+        const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+        const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+      }
+      let [a, b, c, d, e, f, g, h] = H;
+      for (let i = 0; i < 64; i++) {
+        const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25), ch = (e & f) ^ (~e & g);
+        const t1 = (h + S1 + ch + K[i] + w[i]) >>> 0;
+        const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22), maj = (a & b) ^ (a & c) ^ (b & c);
+        const t2 = (S0 + maj) >>> 0;
+        h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+      }
+      H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+      H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
+    }
+    return H.map((x) => x.toString(16).padStart(8, '0')).join('');
+  };
+})();
+
+/* ---------- audit trail (hash-chained) ---------- */
+const ZERO_HASH = '0'.repeat(64);
+const audit = { log: [], last: {} };
+const auditEntryHash = (prev, seq, ts, action, detail) => sha256([prev, seq, ts, action, detail].join('|'));
+function auditHead() { return audit.log.length ? audit.log[audit.log.length - 1].hash : ZERO_HASH; }
+function auditSave() { store.set('sessionStorage', AUDIT_KEY, audit.log); }
+/** Append one entry. Keep `detail` free of patient identifiers (the app never puts any there). */
+function auditAdd(action, detail = '') {
+  const seq = audit.log.length + 1, ts = new Date().toISOString(), prev = auditHead();
+  const d = String(detail).slice(0, 300);
+  audit.log.push({ seq, ts, action, detail: d, prev, hash: auditEntryHash(prev, seq, ts, action, d) });
+  auditSave();
+}
+/** Log at most once per `ms` for the same key (used for typing). */
+function auditThrottled(key, action, detail, ms = 30000) {
+  const now = Date.now();
+  if (audit.last[key] && now - audit.last[key] < ms) return;
+  audit.last[key] = now; auditAdd(action, detail);
+}
+function auditVerify(log = audit.log) {
+  let prev = ZERO_HASH;
+  for (let i = 0; i < log.length; i++) {
+    const e = log[i];
+    if (e.seq !== i + 1 || e.prev !== prev || e.hash !== auditEntryHash(e.prev, e.seq, e.ts, e.action, e.detail)) return { ok: false, brokenAt: i + 1, count: log.length };
+    prev = e.hash;
+  }
+  return { ok: true, count: log.length, head: prev };
+}
+function auditLoad() {
+  const saved = store.get('sessionStorage', AUDIT_KEY);
+  if (Array.isArray(saved) && saved.length) audit.log = saved;
+  else auditAdd('session-start', `app ${APP_VERSION}; library ${KB_SNAPSHOT}${HOSTED ? '; hosted preview' : ''}`);
+}
+
+/* ---------- live look-up settings (opt-in, per session) ---------- */
+function loadLiveConfig() {
+  const cfg = store.get('localStorage', LIVE_CFG_KEY, {}) || {};
+  state.live.oncokbUrl = typeof cfg.oncokbUrl === 'string' ? cfg.oncokbUrl : '';
+}
+function saveLiveConfig() { store.set('localStorage', LIVE_CFG_KEY, { oncokbUrl: state.live.oncokbUrl }); }
+
+/* ---------- one careful way to call outside services ---------- */
+let liveLastCall = 0;
+const LIVE_GAP_MS = 400; // NCBI asks for no more than 3 requests per second without a key
+async function liveFetch(connector, url, query) {
+  if (HOSTED) return { ok: false, error: 'Live look-ups are not available in the hosted preview: the host blocks outside connections. Run the app locally (see the README) to use them.' };
+  if (!state.live.enabled) return { ok: false, error: 'Live look-ups are switched off. Turn them on in Connect → Live look-ups.' };
+  const wait = Math.max(0, liveLastCall + LIVE_GAP_MS - Date.now());
+  liveLastCall = Date.now() + wait;
+  if (wait) await new Promise((r) => setTimeout(r, wait));
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 15000);
+  try {
+    const res = await fetch(url, { signal: ctl.signal, headers: { Accept: 'application/json' } });
+    clearTimeout(timer);
+    if (!res.ok) { auditAdd('live-lookup', `${connector} HTTP ${res.status} · ${query}`); return { ok: false, status: res.status, error: `${connector} answered HTTP ${res.status}. Nothing was retrieved.` }; }
+    const json = await res.json();
+    auditAdd('live-lookup', `${connector} OK · ${query}`);
+    return { ok: true, json, url, retrievedAt: new Date().toISOString() };
+  } catch (e) {
+    clearTimeout(timer);
+    const why = e && e.name === 'AbortError' ? 'timed out after 15 seconds' : 'could not connect (network policy, CORS, offline or blocked)';
+    auditAdd('live-lookup', `${connector} FAILED: ${why} · ${query}`);
+    return { ok: false, error: `${connector}: ${why}. No data was retrieved and none is shown.` };
+  }
+}
+
+const NCBI = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
+const NCBI_TOOL = '&tool=onco-ngs-reader';
+const enc = encodeURIComponent;
+
+/* ---------- ClinVar ---------- */
+function reviewStars(status) {
+  const s = String(status || '').toLowerCase();
+  if (!s) return null;
+  if (s.includes('practice guideline')) return 4;
+  if (s.includes('expert panel')) return 3;
+  if (s.includes('multiple submitters') && s.includes('no conflicts')) return 2;
+  if (s.includes('conflicting')) return 1;
+  if (s.includes('single submitter')) return 1;
+  if (s.includes('no assertion') || s.includes('no classification') || s.includes('no interpretation')) return 0;
+  return null;
+}
+/** Words ClinVar might use for this variant, most specific first. */
+function clinvarQueries(v) {
+  const nv = normVariant(v), g = nv.gene;
+  const cd = String(v.hgvsC || '').trim().replace(/^c\./i, '');
+  const p1 = /^[A-Z]\d+[A-Z*]$/.test(nv.p) ? nv.p : '';
+  const p3 = p1 ? `p.${AA1TO3[p1[0]]}${p1.slice(1, -1)}${AA1TO3[p1.slice(-1)]}` : '';
+  const q = [];
+  if (v.transcript && /\.\d+$/.test(v.transcript) && cd) q.push({ label: 'HGVS transcript + c.', term: `${v.transcript}:c.${cd}` });
+  if (cd) q.push({ label: 'gene + c.', term: `${g}[gene] AND "c.${cd}"` });
+  if (p3) q.push({ label: 'gene + p. (3-letter)', term: `${g}[gene] AND "${p3}"` });
+  if (p1) q.push({ label: 'gene + one-letter change', term: `${g} ${p1}` });
+  return { queries: q, needles: [p3, cd ? `c.${cd}` : '', p1 ? `p.${p1}` : ''].filter(Boolean).map((x) => x.toLowerCase()) };
+}
+function parseClinvarDoc(d) {
+  const cls = [];
+  const add = (type, o) => {
+    if (!o || (!o.description && !o.review_status)) return;
+    cls.push({ type, description: o.description || '', review: o.review_status || '', stars: reviewStars(o.review_status), last: String(o.last_evaluated || '').slice(0, 10), traits: (o.trait_set || []).map((t) => t.trait_name).filter(Boolean).slice(0, 4) });
+  };
+  add('Germline classification', d.germline_classification || d.clinical_significance);
+  add('Somatic clinical impact', d.clinical_impact_classification);
+  add('Oncogenicity classification', d.oncogenicity_classification);
+  return { uid: String(d.uid || ''), accession: d.accession || d.accession_version || '', title: d.title || (d.variation_set && d.variation_set[0] && d.variation_set[0].variation_name) || '', objType: d.obj_type || '', genes: (d.genes || []).map((x) => x.symbol).filter(Boolean), classifications: cls };
+}
+function clinvarNameBlob(d) {
+  const names = [d.title || ''].concat((d.variation_set || []).map((x) => `${x.variation_name || ''} ${x.cdna_change || ''}`));
+  return names.join(' ').toLowerCase();
+}
+async function retrieveClinVar(v) {
+  const nv = normVariant(v);
+  const key = `${v.id}:clinvar`;
+  if (!nv.gene || ['fusion', 'rearrangement', 'amplification', 'deletion'].includes(v.type)) {
+    state.live.results[key] = { error: 'ClinVar is not suited to fusions or copy-number alterations. Nothing was queried.', at: new Date().toISOString() }; saveState(); return;
+  }
+  const { queries, needles } = clinvarQueries(v);
+  if (!queries.length) { state.live.results[key] = { error: 'Enter a protein (p.) or cDNA (c.) change to build a ClinVar query.', at: new Date().toISOString() }; saveState(); return; }
+  const tried = [];
+  for (const q of queries) {
+    const url = `${NCBI}esearch.fcgi?db=clinvar&term=${enc(q.term)}&retmode=json&retmax=20${NCBI_TOOL}`;
+    const r = await liveFetch('NCBI ClinVar', url, q.term);
+    if (!r.ok) { state.live.results[key] = { error: r.error, at: new Date().toISOString(), tried }; saveState(); return; }
+    const ids = (r.json && r.json.esearchresult && r.json.esearchresult.idlist) || [];
+    tried.push({ term: q.term, label: q.label, hits: ids.length });
+    if (!ids.length) continue;
+    const sUrl = `${NCBI}esummary.fcgi?db=clinvar&id=${ids.join(',')}&retmode=json${NCBI_TOOL}`;
+    const s = await liveFetch('NCBI ClinVar', sUrl, `summary of ${ids.length} record(s)`);
+    if (!s.ok) { state.live.results[key] = { error: s.error, at: new Date().toISOString(), tried }; saveState(); return; }
+    const res = (s.json && s.json.result) || {};
+    const docs = (res.uids || ids).map((u) => res[u]).filter(Boolean);
+    const exact = [], other = [];
+    docs.forEach((d) => { const blob = clinvarNameBlob(d); (needles.some((n) => blob.includes(n)) ? exact : other).push(parseClinvarDoc(d)); });
+    if (exact.length || q === queries[queries.length - 1]) {
+      state.live.results[key] = { at: s.retrievedAt, query: q.term, queryUrl: url, tried, exact, other, total: ids.length }; saveState(); return;
+    }
+  }
+  state.live.results[key] = { at: new Date().toISOString(), query: queries[queries.length - 1].term, tried, exact: [], other: [], total: 0 };
+  saveState();
+}
+
+/* ---------- PubMed ---------- */
+async function retrievePubMed(v) {
+  const key = `${v.id}:pubmed`, nv = normVariant(v);
+  const cond = CANCER_SEARCH[state.case.cancer] || '';
+  const term = [`${nv.gene}[Title/Abstract]`, v.variant ? `"${String(v.variant).replace(/^p\./i, '')}"` : '', cond ? `${cond}[Title/Abstract]` : ''].filter(Boolean).join(' AND ');
+  const r = await liveFetch('NCBI PubMed', `${NCBI}esearch.fcgi?db=pubmed&term=${enc(term)}&retmax=6&sort=relevance&retmode=json${NCBI_TOOL}`, term);
+  if (!r.ok) { state.live.results[key] = { error: r.error, at: new Date().toISOString() }; saveState(); return; }
+  const ids = (r.json.esearchresult && r.json.esearchresult.idlist) || [];
+  if (!ids.length) { state.live.results[key] = { at: r.retrievedAt, query: term, items: [] }; saveState(); return; }
+  const s = await liveFetch('NCBI PubMed', `${NCBI}esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json${NCBI_TOOL}`, `summary of ${ids.length} PMIDs`);
+  if (!s.ok) { state.live.results[key] = { error: s.error, at: new Date().toISOString() }; saveState(); return; }
+  const res = s.json.result || {};
+  const items = (res.uids || ids).map((u) => res[u]).filter(Boolean).map((d) => ({ pmid: String(d.uid), title: d.title || '', journal: d.fulljournalname || d.source || '', date: d.pubdate || '', first: (d.authors && d.authors[0] && d.authors[0].name) || '' }));
+  state.live.results[key] = { at: s.retrievedAt, query: term, items }; saveState();
+}
+
+/* ---------- ClinicalTrials.gov (API v2) ---------- */
+function parseTrials(json) {
+  return {
+    total: typeof json.totalCount === 'number' ? json.totalCount : null,
+    studies: (json.studies || []).map((s) => {
+      const p = s.protocolSection || {}, id = p.identificationModule || {}, st = p.statusModule || {}, ds = p.designModule || {};
+      const sp = (p.sponsorCollaboratorsModule || {}).leadSponsor || {}, cl = p.conditionsModule || {}, ar = p.armsInterventionsModule || {};
+      const loc = (p.contactsLocationsModule || {}).locations || [];
+      return { nct: id.nctId || '', title: id.briefTitle || '', status: st.overallStatus || '', phases: ds.phases || [], sponsor: sp.name || '', conditions: (cl.conditions || []).slice(0, 4), interventions: (ar.interventions || []).map((i) => i.name).filter(Boolean).slice(0, 4), countries: Array.from(new Set(loc.map((l) => l.country).filter(Boolean))).slice(0, 6) };
+    })
+  };
+}
+async function retrieveTrials(gene) {
+  const key = `trials:${gene}`;
+  const cond = CANCER_SEARCH[state.case.cancer] || state.case.histology || '';
+  const url = `https://clinicaltrials.gov/api/v2/studies?${cond ? 'query.cond=' + enc(cond) + '&' : ''}query.term=${enc(gene)}&filter.overallStatus=RECRUITING&pageSize=10&countTotal=true&format=json`;
+  const r = await liveFetch('ClinicalTrials.gov', url, `${cond || 'any condition'} · ${gene} · recruiting`);
+  if (!r.ok) { state.live.results[key] = { error: r.error, at: new Date().toISOString() }; saveState(); return; }
+  state.live.results[key] = Object.assign({ at: r.retrievedAt, query: `${cond || 'any condition'} · ${gene} · recruiting`, queryUrl: url }, parseTrials(r.json)); saveState();
+}
+
+/* ---------- openFDA drug labels ---------- */
+/** Only words that look like generic drug names (by their standard endings) are sent to openFDA. */
+const DRUG_SUFFIX = /(mab|nib|parib|ciclib|lisib|rasib|tecan|estrant|terone|lutamide|staurin|platin|taxel)$/;
+function genericNames(drug) {
+  const words = String(drug).toLowerCase().split(/[\s+,/±()–—-]+/).map((t) => t.replace(/[^a-z]/g, ''));
+  return Array.from(new Set(words.filter((t) => t.length >= 6 && DRUG_SUFFIX.test(t)))).slice(0, 4);
+}
+function parseFda(json) {
+  const rs = (json.results || []).filter((r) => r && r.indications_and_usage);
+  if (!rs.length) return null;
+  rs.sort((a, b) => String(b.effective_time || '').localeCompare(String(a.effective_time || '')));
+  const r = rs[0], of = r.openfda || {};
+  return { brand: (of.brand_name || []).join(', '), generic: (of.generic_name || []).join(', '), effective: String(r.effective_time || ''), version: String(r.version || ''), setId: r.set_id || '', indications: (r.indications_and_usage || []).join(' ').replace(/\s+/g, ' ').trim() };
+}
+async function retrieveFda(name) {
+  const key = `fda:${name}`;
+  const url = `https://api.fda.gov/drug/label.json?search=openfda.generic_name:%22${enc(name)}%22&limit=5`;
+  const r = await liveFetch('openFDA', url, `label for ${name}`);
+  if (!r.ok) { state.live.results[key] = { error: r.status === 404 ? `openFDA found no label for “${name}”. This does not mean the drug is unapproved.` : r.error, at: new Date().toISOString() }; saveState(); return; }
+  const p = parseFda(r.json);
+  state.live.results[key] = p ? Object.assign({ at: r.retrievedAt, query: `label for ${name}`, queryUrl: url }, p) : { at: r.retrievedAt, error: `openFDA returned no label text for “${name}”.` };
+  saveState();
+}
+
+/* ---------- OncoKB through the local proxy only ---------- */
+const ONCOTREE = { nsclc: 'NSCLC', breast: 'BRCA', crc: 'COADREAD', melanoma: 'MEL', prostate: 'PRAD', pancreatic: 'PAAD', gastric: 'STAD', biliary: 'CHOL', urothelial: 'BLCA', gist: 'GIST', aml: 'AML', cml: 'CML' };
+function proxyBase() { return String(state.live.oncokbUrl || '').trim().replace(/\/+$/, ''); }
+function parseOncokb(r) {
+  return {
+    oncogenic: r.oncogenic || '', effect: (r.mutationEffect && r.mutationEffect.knownEffect) || '',
+    sensitive: r.highestSensitiveLevel || '', resistance: r.highestResistanceLevel || '',
+    diagnostic: r.highestDiagnosticImplicationLevel || '', prognostic: r.highestPrognosticImplicationLevel || '',
+    treatments: (r.treatments || []).slice(0, 12).map((t) => ({ level: t.level || '', drugs: (t.drugs || []).map((d) => d.drugName).filter(Boolean).join(' + '), cancer: (t.levelAssociatedCancerType && (t.levelAssociatedCancerType.name || t.levelAssociatedCancerType.mainType)) || '' })),
+    dataVersion: (r.dataVersion || ''), lastUpdate: r.lastUpdate || ''
+  };
+}
+async function retrieveOncokb(v) {
+  const key = `${v.id}:oncokb`, nv = normVariant(v);
+  const base = proxyBase();
+  if (!base) { state.live.results[key] = { error: 'No local OncoKB proxy address is set. See Connect → OncoKB.', at: new Date().toISOString() }; saveState(); return; }
+  const alt = /^[A-Z]\d+[A-Z*]$/.test(nv.p) ? nv.p : (v.variant || '').replace(/^p\./i, '');
+  if (!alt) { state.live.results[key] = { error: 'OncoKB needs a protein change (for example L858R).', at: new Date().toISOString() }; saveState(); return; }
+  const tumor = ONCOTREE[state.case.cancer] || '';
+  const url = `${base}/api/oncokb/annotate?hugoSymbol=${enc(nv.gene)}&alteration=${enc(alt)}${tumor ? '&tumorType=' + enc(tumor) : ''}`;
+  const r = await liveFetch('OncoKB (local proxy)', url, `${nv.gene} ${alt}${tumor ? ' · ' + tumor : ''}`);
+  if (!r.ok) { state.live.results[key] = { error: r.error, at: new Date().toISOString() }; saveState(); return; }
+  state.live.results[key] = Object.assign({ at: r.retrievedAt, query: `${nv.gene} ${alt}${tumor ? ' · tumorType ' + tumor : ' · no tumour type sent'}` }, parseOncokb(r.json)); saveState();
+}
+
+/* ---------- connection tests ---------- */
+const CONNECTORS = [
+  { key: 'clinvar', name: 'NCBI ClinVar', host: 'eutils.ncbi.nlm.nih.gov', sends: 'Gene symbol and variant name (for example p.Leu858Arg or NM_005228.5:c.2573T>G).', test: () => `${NCBI}esearch.fcgi?db=clinvar&term=BRAF%5Bgene%5D+AND+V600E&retmode=json&retmax=1${NCBI_TOOL}`, doc: 'ncbi_eutils' },
+  { key: 'pubmed', name: 'NCBI PubMed', host: 'eutils.ncbi.nlm.nih.gov', sends: 'Gene symbol, protein change and a tumour-type label.', test: () => `${NCBI}esearch.fcgi?db=pubmed&term=EGFR&retmax=1&retmode=json${NCBI_TOOL}`, doc: 'ncbi_eutils' },
+  { key: 'trials', name: 'ClinicalTrials.gov', host: 'clinicaltrials.gov', sends: 'Tumour-type label and gene symbol; recruiting studies only.', test: () => 'https://clinicaltrials.gov/api/v2/studies?query.term=EGFR&pageSize=1&format=json', doc: 'ctgov_api' },
+  { key: 'fda', name: 'openFDA drug labels', host: 'api.fda.gov', sends: 'Drug generic names.', test: () => 'https://api.fda.gov/drug/label.json?search=openfda.generic_name:%22osimertinib%22&limit=1', doc: 'openfda' },
+  { key: 'oncokb', name: 'OncoKB (your local proxy)', host: 'address you set', sends: 'Gene, protein change and an OncoTree code, to YOUR proxy, which adds your licensed token and forwards to OncoKB.', test: () => `${proxyBase()}/api/health`, doc: 'oncokb_api' }
+];
+async function testConnector(key) {
+  const c = CONNECTORS.find((x) => x.key === key); if (!c) return;
+  if (key === 'oncokb' && !proxyBase()) { state.live.status[key] = { ok: false, at: new Date().toISOString(), detail: 'No proxy address set.' }; return; }
+  const r = await liveFetch(c.name, c.test(), 'connection test');
+  state.live.status[key] = { ok: r.ok, at: new Date().toISOString(), detail: r.ok ? (key === 'oncokb' ? (r.json && r.json.oncokbConfigured ? 'Proxy reachable; token configured.' : 'Proxy reachable; NO OncoKB token configured on it.') : 'Reachable.') : r.error };
+}
+
+/* ---------- small renderers for retrieved data ---------- */
+const stamp = (iso) => (iso ? new Date(iso).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '');
+const liveBtn = (action, attrs, label) => {
+  const off = HOSTED || !state.live.enabled;
+  return `<button class="btn btn-secondary btn-sm" data-action="${action}" ${attrs}${off ? ' aria-disabled="true"' : ''} title="${off ? (HOSTED ? 'Not available in the hosted preview' : 'Switch on live look-ups in Connect first') : 'Sends the query shown on the Connect page'}">${esc(label)}</button>`;
+};
+const liveError = (r) => `<p class="live-err" role="alert">${esc(r.error)}</p>`;
+const liveProv = (r, extra = '') => `<p class="small muted prov">${chip('Retrieved live', 'mint')} ${esc(stamp(r.at))}${r.query ? ' · question: ' + esc(r.query) : ''}${extra}</p>`;
+
+function clinvarBlock(v) {
+  const r = state.live.results[`${v.id}:clinvar`];
+  if (!r) return '';
+  if (r.error) return liveError(r);
+  const rec = (c) => `<li><strong>${esc(c.type)}:</strong> ${esc(c.description || '—')}${c.stars !== null ? ` · <span class="stars" title="ClinVar review status">${'★'.repeat(c.stars)}${'☆'.repeat(4 - c.stars)}</span> ${c.stars}/4` : ''}<div class="small muted">${esc(c.review || 'review status not given')}${c.last ? ' · last evaluated ' + esc(c.last) : ''}${c.traits.length ? ' · ' + esc(c.traits.join('; ')) : ''}</div></li>`;
+  const card = (d) => `<div class="cv-rec"><div><strong>${esc(d.title || 'ClinVar record')}</strong> ${extLink('https://www.ncbi.nlm.nih.gov/clinvar/variation/' + d.uid + '/', d.accession || 'open')}</div>${d.classifications.length ? `<ul class="plain">${d.classifications.map(rec).join('')}</ul>` : '<p class="small muted">No classification fields were returned for this record.</p>'}</div>`;
+  let h = liveProv(r, r.tried && r.tried.length ? ` · ${r.tried.map((t) => t.hits + ' hit(s) for “' + esc(t.term) + '”').join('; ')}` : '');
+  h += r.exact.length ? `<p class="small"><strong>${r.exact.length} record(s) whose name matches the variant you entered:</strong></p>${r.exact.map(card).join('')}` : `<p class="muted">No ClinVar record with a name matching this exact variant was found. <strong>This does not prove the variant is absent from ClinVar</strong> (naming differences, transcript versions); search ClinVar yourself.</p>`;
+  if (r.other && r.other.length) h += `<details class="detail-box"><summary>${r.other.length} other record(s) returned by the search (names do not match — not the same variant)</summary>${r.other.map(card).join('')}</details>`;
+  h += `<p class="small muted">Read each classification <em>type</em> separately: germline pathogenicity, somatic clinical impact and oncogenicity are different questions.</p>`;
+  return h;
+}
+function pubmedBlock(v) {
+  const r = state.live.results[`${v.id}:pubmed`]; if (!r) return '';
+  if (r.error) return liveError(r);
+  return liveProv(r) + (r.items.length ? `<ul class="plain">${r.items.map((i) => `<li>${esc(i.first)} ${esc(i.journal)} ${esc(i.date)} — ${esc(i.title)} ${extLink('https://pubmed.ncbi.nlm.nih.gov/' + i.pmid + '/', 'PMID ' + i.pmid)}</li>`).join('')}</ul><p class="small muted">Ranked by PubMed relevance; this is a literature search, not an evidence appraisal.</p>` : '<p class="muted">No PubMed results for this query.</p>');
+}
+function oncokbBlock(v) {
+  const r = state.live.results[`${v.id}:oncokb`]; if (!r) return '';
+  if (r.error) return liveError(r);
+  return liveProv(r, ' · via your local proxy') + kv([
+    ['Oncogenic', esc(r.oncogenic || '—')], ['Mutation effect', esc(r.effect || '—')], ['Highest sensitive level', esc(r.sensitive || '—')], ['Highest resistance level', esc(r.resistance || '—')],
+    ['Diagnostic / prognostic', esc([r.diagnostic, r.prognostic].filter(Boolean).join(' / ') || '—')], ['OncoKB data version', esc(r.dataVersion || 'not returned')]
+  ]) + (r.treatments.length ? `<div class="table-wrap"><table class="table table-compact"><thead><tr><th>Level</th><th>Drug(s)</th><th>Cancer type</th></tr></thead><tbody>${r.treatments.map((t) => `<tr><td>${esc(t.level)}</td><td>${esc(t.drugs)}</td><td>${esc(t.cancer)}</td></tr>`).join('')}</tbody></table></div>` : '') + `<p class="small muted">OncoKB content is licensed; check the terms for clinical-reporting use. Levels are versioned: cite the data version and date.</p>`;
+}
+function fdaBlock(name) {
+  const r = state.live.results[`fda:${name}`]; if (!r) return '';
+  if (r.error) return liveError(r);
+  const ex = r.indications.length > 650 ? r.indications.slice(0, 650) + '…' : r.indications;
+  const eff = /^\d{8}$/.test(r.effective) ? `${r.effective.slice(0, 4)}-${r.effective.slice(4, 6)}-${r.effective.slice(6)}` : r.effective;
+  return `<div class="fda-box">${liveProv(r)}<p class="small"><strong>${esc(r.brand || r.generic || name)}</strong> · label effective ${esc(eff || 'date not given')}${r.version ? ' · version ' + esc(r.version) : ''}${r.setId ? ' · ' + extLink('https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=' + r.setId, 'DailyMed') : ''}</p><p class="small">${esc(ex)}</p><p class="small muted">Label text is shown verbatim; the app does not judge whether it supports the curated entry. Compare the wording yourself.</p></div>`;
+}
+function trialsBlock(gene) {
+  const r = state.live.results[`trials:${gene}`]; if (!r) return '';
+  if (r.error) return liveError(r);
+  return liveProv(r, r.total !== null ? ` · ${r.total} recruiting stud${r.total === 1 ? 'y' : 'ies'} matched; first ${r.studies.length} shown` : '') + (r.studies.length ? `<div class="table-wrap"><table class="table table-compact"><thead><tr><th>NCT</th><th>Title</th><th>Phase / status</th><th>Interventions · countries</th></tr></thead><tbody>${r.studies.map((s) => `<tr><td>${extLink('https://clinicaltrials.gov/study/' + s.nct, s.nct)}</td><td>${esc(s.title)}<div class="small muted">${esc(s.sponsor)}</div></td><td>${esc((s.phases || []).join(', ').replace(/PHASE/g, 'Phase ') || '—')}<div class="small muted">${esc(s.status)}</div></td><td>${esc(s.interventions.join('; ') || '—')}<div class="small muted">${esc(s.countries.join(', '))}</div></td></tr>`).join('')}</tbody></table></div><p class="small muted">The app does not check eligibility. Read the protocol and confirm sites and criteria.</p>` : '<p class="muted">No recruiting studies matched this query.</p>');
+}
+
+/* =====================================================================
+   13. STAGE 2 — PDF VIEWER AND EXPERIMENTAL TEXT EXTRACTION
+   ---------------------------------------------------------------------
+   HOW IT WORKS (plain language)
+   * The PDF is opened inside your browser with the bundled pdf.js
+     library (folder vendor/pdfjs). It is NOT uploaded anywhere.
+   * "Extract" reads the selectable text on each page and looks for gene
+     names next to variant descriptions, VAF, depth, fusions, copy
+     number, and a few case-level items (TMB, MSI, tumour content…).
+   * Everything found is only a PROPOSAL. You choose which items to add;
+     each added item is marked "extracted — verify" and must be checked
+     against the page it came from before the findings can be confirmed.
+   LIMITS (stated honestly)
+   * Only PDFs with selectable text. Scanned images need OCR, which is
+     not included — the app tells you when no text is found.
+   * Report layouts vary widely. This heuristic has been tried only on
+     invented (synthetic) test reports, so its real-world sensitivity and
+     error rate are UNKNOWN. Treat a missing item as "not found", never as
+     "absent from the report".
+   * The extracted text is held in memory only. It is never saved, never
+     logged, and is discarded when you remove the file.
+   ===================================================================== */
+
+const pdfState = { doc: null, page: 1, scale: 1.25, renderTask: null, bytes: null };
+const pdfjsReady = () => typeof window !== 'undefined' && window.pdfjsLib;
+
+function pdfConfigure() {
+  if (!pdfjsReady()) return false;
+  if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = window.ONCO_PDF_WORKER_SRC || 'vendor/pdfjs/pdf.worker.min.js';
+  }
+  return true;
+}
+async function pdfOpen(file) {
+  pdfClose();
+  if (!pdfConfigure()) throw new Error('The PDF library (folder vendor/pdfjs) was not found next to index.html. Copy the whole project folder.');
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  pdfState.bytes = bytes;
+  pdfState.doc = await window.pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+  pdfState.page = 1;
+  return pdfState.doc.numPages;
+}
+function pdfClose() {
+  try { if (pdfState.renderTask) pdfState.renderTask.cancel(); } catch (e) { /* ignore */ }
+  try { if (pdfState.doc) pdfState.doc.destroy(); } catch (e) { /* ignore */ }
+  pdfState.doc = null; pdfState.bytes = null; pdfState.renderTask = null; pdfState.page = 1;
+  state.extract = null;
+}
+async function pdfRender() {
+  const canvas = $('#pdfCanvas'); if (!canvas || !pdfState.doc) return;
+  try { if (pdfState.renderTask) pdfState.renderTask.cancel(); } catch (e) { /* ignore */ }
+  const n = Math.min(Math.max(1, pdfState.page), pdfState.doc.numPages); pdfState.page = n;
+  const page = await pdfState.doc.getPage(n);
+  const vp = page.getViewport({ scale: pdfState.scale });
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(vp.width * dpr); canvas.height = Math.floor(vp.height * dpr);
+  canvas.style.width = '100%'; canvas.style.maxWidth = `${Math.floor(vp.width)}px`; canvas.style.height = 'auto';
+  const ctx = canvas.getContext('2d');
+  const task = page.render({ canvasContext: ctx, viewport: vp, transform: [dpr, 0, 0, dpr, 0, 0] });
+  pdfState.renderTask = task;
+  try { await task.promise; } catch (e) { /* cancelled by a newer render */ }
+  const lbl = $('#pdfPageLabel'); if (lbl) lbl.textContent = `Page ${n} of ${pdfState.doc.numPages}`;
+}
+function pdfGoto(n) { pdfState.page = Number(n) || 1; pdfRender(); const v = $('#pdfViewer'); if (v) v.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+
+/* ---------- reading the text, line by line ---------- */
+async function pdfReadLines(onProgress) {
+  const pages = [];
+  for (let i = 1; i <= pdfState.doc.numPages; i++) {
+    const page = await pdfState.doc.getPage(i);
+    const tc = await page.getTextContent();
+    const items = tc.items.filter((it) => it.str && it.str.trim() !== '').map((it) => ({ s: it.str, x: it.transform[4], y: it.transform[5], w: it.width || 0 }));
+    items.sort((a, b) => b.y - a.y || a.x - b.x);
+    const rows = []; let cur = null;
+    for (const it of items) {
+      if (cur && Math.abs(cur.y - it.y) <= 3) cur.items.push(it);
+      else { cur = { y: it.y, items: [it] }; rows.push(cur); }
+    }
+    const lines = rows.map((r) => {
+      r.items.sort((a, b) => a.x - b.x);
+      let out = '', prevEnd = null;
+      r.items.forEach((it) => {
+        if (prevEnd !== null) { const gap = it.x - prevEnd; out += gap > 14 ? ' | ' : gap > 0.5 ? ' ' : ''; }
+        out += it.s; prevEnd = it.x + it.w;
+      });
+      return out.trim();
+    }).filter(Boolean);
+    pages.push({ n: i, lines });
+    if (onProgress) onProgress(i, pdfState.doc.numPages);
+  }
+  return pages;
+}
+
+/* ---------- proposing findings from lines (pure functions: easy to test) ---------- */
+const EXTRACT_GENES = Object.keys(GENES).concat(['HER2']);
+const GENE_RX = new RegExp(`(?<![A-Za-z0-9])(${EXTRACT_GENES.join('|')})(?![A-Za-z0-9])`, 'g');
+const RX = {
+  p3: /p\.\(?((?:[A-Z][a-z]{2}\d+(?:_[A-Z][a-z]{2}\d+)?(?:delins[A-Za-z]*|del[A-Za-z]*|dup[A-Za-z]*|ins[A-Za-z]*)|[A-Z][a-z]{2}\d+(?:[A-Z][a-z]{2})?fs(?:Ter|\*)?\d*|[A-Z][a-z]{2}\d+(?:[A-Z][a-z]{2}|Ter|\*)))\)?/,
+  p1: /(?<![A-Za-z0-9_.])(?:p\.)?([A-Z]\d{2,4}[A-Z*])(?![A-Za-z0-9])/,
+  c: /c\.[\d_+\-*]+(?:[ACGT]>[ACGT]|(?:delins|del|dup|ins)[ACGT\d]*)/,
+  nm: /N[MR]_\d+\.\d+/,
+  vafLabel: /(?:VAF|variant allele (?:fraction|frequency)|allele(?:ic)? (?:fraction|frequency)|\bAF\b)[^\d|]{0,20}(\d{1,3}(?:\.\d+)?)\s*%?/i,
+  pct: /(\d{1,3}(?:\.\d+)?)\s*%/g,
+  depthX: /(\d{2,6})\s*[x×]/i,
+  depthLabel: /(?:depth|coverage|reads?)[^\d|]{0,15}(\d{2,6})/i,
+  exon: /exon\s*(\d{1,2})\s*(skipping|deletion|insertion|duplication)/i,
+  cn: /(?:copy[- ]number|\bCN\b|copies)[^\d|]{0,10}(\d+(?:\.\d+)?)/i,
+  fusionWord: /fusion|rearrang|translocation/i,
+  fusionPair: /(?<![A-Za-z0-9])([A-Z][A-Z0-9]{1,9})\s*(?:::|\/|-)\s*([A-Z][A-Z0-9]{1,9})(?![A-Za-z0-9])/
+};
+/** True when the text around a gene says the alteration was NOT found (so it must never be proposed). */
+const NEG_AFTER = /\b(?:not (?:detected|identified|observed|found|seen)|none (?:detected|identified|found)|no (?:evidence|pathogenic|alteration|mutation|variant|amplification|fusion|rearrangement|deletion)|negative|wild[- ]?type|absent|without|no change|unaltered)\b/i;
+const NEG_BEFORE = /\b(?:no|not|negative for|without|absence of|absent|no evidence of)\s*(?:\w+\s+){0,2}$/i;
+function isNegated(before, seg) { return NEG_AFTER.test(seg) || NEG_BEFORE.test(before.slice(-40)); }
+function inferType(p3, p1, c, segment) {
+  const s = segment.toLowerCase();
+  if (/amplif/.test(s)) return 'amplification';
+  if (/homozygous deletion|deep deletion|biallelic (?:loss|deletion)|gene deletion/.test(s)) return 'deletion';
+  if (/skipping/.test(s)) return 'splice';
+  if (p3) { if (/fs/.test(p3)) return 'frameshift'; if (/(del|dup|ins)/.test(p3)) return 'inframe'; if (/(Ter|\*)$/.test(p3)) return 'nonsense'; return 'missense'; }
+  if (p1) return /\*$/.test(p1) ? 'nonsense' : 'missense';
+  if (c) { if (/[+-]\d+[ACGT]>/.test(c)) return 'splice'; if (/(del|dup|ins)/.test(c)) return 'inframe'; return 'missense'; }
+  if (/exon\s*\d+\s*(deletion|insertion|duplication)/.test(s)) return 'inframe';
+  return '';
+}
+/** Turn text lines into candidate findings. `pages` = [{n, lines:[...]}]. */
+function proposeVariants(pages) {
+  const out = []; const seen = new Set();
+  pages.forEach((pg) => {
+    const header = pg.lines.some((l) => /VAF|allele (fraction|frequency)/i.test(l) && /\|/.test(l) && !RX.p3.test(l) && !RX.c.test(l));
+    pg.lines.forEach((line, li) => {
+      // fusions first
+      const fm = line.match(RX.fusionPair);
+      if (fm && (RX.fusionWord.test(line) || /::/.test(line)) && !NEG_AFTER.test(line)) {
+        const a = fm[1], b = fm[2];
+        const known = (x) => !!GENES[normGene(x)];
+        let gene = '', partner = '';
+        if (known(b) && !known(a)) { gene = normGene(b); partner = a; } else if (known(a) && !known(b)) { gene = normGene(a); partner = b; } else if (known(a) && known(b)) { gene = normGene(b); partner = a; }
+        if (gene) {
+          const key = `${gene}|fusion|${partner}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            const bp = line.match(/\((E\d+;\s*[A-Z]\d+|exon[^)]*)\)/i);
+            const pctM = line.match(RX.vafLabel);
+            out.push({ gene, variant: bp ? bp[1] : '', hgvsC: '', transcript: '', type: RX.fusionWord.test(line) && /rearrang/i.test(line) && !/fusion/i.test(line) ? 'rearrangement' : 'fusion', vaf: pctM ? pctM[1] : '', depth: '', partner: partner.toUpperCase(), cn: '', conf: 'medium', vafLabelled: true, page: pg.n, snippet: line.slice(0, 220) });
+          }
+          return;
+        }
+      }
+      const hits = []; let m; GENE_RX.lastIndex = 0;
+      while ((m = GENE_RX.exec(line))) hits.push({ g: m[1], i: m.index, end: m.index + m[1].length });
+      hits.forEach((h, k) => {
+        const segEnd = k + 1 < hits.length ? hits[k + 1].i : line.length;
+        let seg = line.slice(h.end, segEnd);
+        // wrapped table rows: if nothing useful follows the gene, borrow the next line when it has no gene
+        let borrowed = false;
+        if (!RX.p3.test(seg) && !RX.p1.test(seg) && !RX.c.test(seg) && !/amplif|deletion|skipping|rearrang/i.test(seg) && pg.lines[li + 1] && !GENE_RX.test(pg.lines[li + 1])) {
+          GENE_RX.lastIndex = 0; const nxt = pg.lines[li + 1];
+          if (RX.p3.test(nxt) || RX.c.test(nxt) || RX.p1.test(nxt)) { seg = seg + ' ' + nxt; borrowed = true; }
+        }
+        GENE_RX.lastIndex = 0;
+        if (isNegated(line.slice(0, h.i), seg)) return;
+        const p3m = seg.match(RX.p3), c = (seg.match(RX.c) || [''])[0];
+        let p1m = seg.match(RX.p1);
+        const exonM = seg.match(RX.exon);
+        const isCNA = /amplif|homozygous deletion|deep deletion|biallelic (?:loss|deletion)|gene deletion/i.test(seg);
+        if (!p3m && !p1m && !c && !exonM && !isCNA) return;
+        const p3 = p3m ? p3m[1] : '', p1 = !p3m && p1m ? p1m[1] : '';
+        const gene = normGene(h.g);
+        let variant = p3 ? `p.${p3}` : p1 ? `p.${p1}` : exonM ? `exon ${exonM[1]} ${exonM[2].toLowerCase()}` : '';
+        const type = inferType(p3, p1, c, exonM ? seg : seg);
+        const nm = (line.match(RX.nm) || (borrowed ? pg.lines[li + 1].match(RX.nm) : null) || [''])[0];
+        let vaf = '', vafLabelled = false;
+        const lab = seg.match(RX.vafLabel) || (hits.length === 1 ? line.match(RX.vafLabel) : null);
+        if (lab) { vaf = lab[1]; vafLabelled = true; }
+        else {
+          const pcts = Array.from(seg.matchAll(RX.pct)).map((x) => x[1]).filter((x) => Number(x) <= 100);
+          if (pcts.length === 1) { vaf = pcts[0]; vafLabelled = header; }
+        }
+        const dm = seg.match(RX.depthX) || seg.match(RX.depthLabel);
+        const cnm = isCNA ? seg.match(RX.cn) : null;
+        const cn = type === 'deletion' ? (/homozygous|deep|biallelic/i.test(seg) ? '0' : (cnm ? cnm[1] : '')) : (cnm ? cnm[1] : '');
+        const key = `${gene}|${variant || c}|${type}`;
+        if (seen.has(key)) return; seen.add(key);
+        const hasVar = !!(p3 || p1 || c || exonM || isCNA);
+        out.push({ gene, variant, hgvsC: c, transcript: nm, type, vaf, depth: dm ? dm[1] : '', partner: '', cn, conf: hasVar && vaf !== '' && vafLabelled ? 'high' : 'medium', vafLabelled, page: pg.n, snippet: (borrowed ? line + ' ⏎ ' + pg.lines[li + 1] : line).slice(0, 260) });
+      });
+    });
+  });
+  return out.map((c, i) => Object.assign(c, { cid: `x${i}` }));
+}
+const CANCER_KEYWORDS = [
+  ['nsclc', /non[- ]small[- ]cell|NSCLC|lung adenocarcinoma/i], ['sclc', /small[- ]cell lung/i], ['crc', /colorectal|colon (?:adeno)?carcinoma|rectal (?:adeno)?carcinoma/i],
+  ['breast', /breast (?:cancer|carcinoma)|invasive ductal|invasive lobular/i], ['melanoma', /melanoma/i], ['ovarian', /ovarian|fallopian|primary peritoneal/i], ['prostate', /prostat/i],
+  ['pancreatic', /pancrea/i], ['gastric', /gastric|gastro-?oesophageal|gastroesophageal|stomach/i], ['biliary', /cholangiocarcinoma|biliary/i], ['urothelial', /urothelial|bladder cancer/i],
+  ['thyroid', /thyroid/i], ['gist', /\bGIST\b|gastrointestinal stromal/i], ['glioma', /glioma|glioblastoma|astrocytoma|oligodendroglioma/i], ['aml', /acute myeloid|\bAML\b/i], ['cml', /chronic myeloid|\bCML\b/i]
+];
+/** Case-level suggestions with the exact text they came from. */
+function proposeCase(pages) {
+  const all = pages.flatMap((p) => p.lines.map((l) => ({ l, n: p.n })));
+  const text = all.map((x) => x.l).join('\n');
+  const find = (rx) => { for (const x of all) { const m = x.l.match(rx); if (m) return { m, line: x.l, page: x.n }; } return null; };
+  const out = [];
+  const add = (field, label, value, hit) => { if (value !== '' && value !== undefined) out.push({ field, label, value, shown: String(value), snippet: hit.line.slice(0, 200), page: hit.page }); };
+  let h;
+  if ((h = find(/(?:TMB|tumou?r mutational burden)[^\d|]{0,30}(\d{1,3}(?:\.\d+)?)\s*(?:mut(?:ation)?s?)?\s*\/\s*Mb/i))) add('tmb', 'TMB (mutations/Mb)', h.m[1], h);
+  if ((h = find(/\b(MSI-H|MSI-high|microsatellite instability[- ]high|high microsatellite instability)\b/i)) && !/\b(?:not|no|negative for)\b[^|.]{0,20}(MSI|microsatellite)/i.test(h.line)) add('msi', 'MSI status', 'MSI-H', h);
+  else if ((h = find(/\b(MSS|microsatellite[- ]stable)\b/i))) add('msi', 'MSI status', 'MSS', h);
+  if ((h = find(/\b(dMMR|MMR[- ]deficient|loss of (?:MLH1|MSH2|MSH6|PMS2))\b/i))) add('mmr', 'MMR immunohistochemistry', 'dMMR', h);
+  else if ((h = find(/\b(pMMR|MMR[- ]proficient)\b/i))) add('mmr', 'MMR immunohistochemistry', 'pMMR', h);
+  if ((h = find(/HRD[^|.\n]{0,40}\b(positive|negative)\b/i))) add('hrd', 'HRD', h.m[1].toLowerCase(), h);
+  if ((h = find(/PD-?L1[^\n|]{0,60}?(TPS|CPS|IC)[^\d]{0,5}(\d{1,3})\s*%?/i))) add('pdl1', 'PD-L1', `${h.m[1].toUpperCase()} ${h.m[2]}%`, h);
+  if ((h = find(/(?:tumou?r (?:content|purity|cellularity|percentage)|neoplastic cellularity)[^\d|]{0,20}(\d{1,3})\s*%/i))) add('purity', 'Tumour purity (%)', h.m[1], h);
+  if (/\bplasma\b|cell-free|\bctDNA\b|liquid biopsy/i.test(text)) { const x = find(/plasma|cell-free|ctDNA|liquid biopsy/i); add('specimen', 'Specimen', 'liquid', x); }
+  else if (/bone marrow|peripheral blood/i.test(text)) add('specimen', 'Specimen', 'marrow', find(/bone marrow|peripheral blood/i));
+  else if (/FFPE|formalin|tissue|biops/i.test(text)) add('specimen', 'Specimen', 'tissue', find(/FFPE|formalin|tissue|biops/i));
+  for (const [code, rx] of CANCER_KEYWORDS) { const x = find(rx); if (x) { add('cancer', 'Cancer type', code, x); break; } }
+  return out;
+}
+
+async function runExtraction() {
+  if (!pdfState.doc) return;
+  const box = $('#extractResult'); box.innerHTML = '<p class="muted">Reading the PDF text…</p>';
+  try {
+    const pages = await pdfReadLines((i, n) => { box.innerHTML = `<p class="muted">Reading page ${i} of ${n}…</p>`; });
+    const lineCount = pages.reduce((a, p) => a + p.lines.length, 0);
+    const cands = proposeVariants(pages), caseSug = proposeCase(pages);
+    state.extract = { pages, cands, caseSug, at: new Date().toISOString(), lineCount };
+    auditAdd('pdf-extraction', `${pages.length} page(s), ${lineCount} text line(s), ${cands.length} candidate variant(s), ${caseSug.length} case suggestion(s)`);
+  } catch (e) {
+    state.extract = null; box.innerHTML = `<p class="live-err">The PDF text could not be read (${esc(e.message || 'unknown error')}). Nothing was extracted.</p>`;
+    auditAdd('pdf-extraction', 'FAILED to read text'); return;
+  }
+  renderExtraction();
+}
+
+function renderExtraction() {
+  const box = $('#extractResult'); if (!box) return;
+  const x = state.extract;
+  if (!x) { box.innerHTML = ''; return; }
+  if (!x.lineCount) {
+    box.innerHTML = callout('peach', 'No selectable text found', '<p>This PDF looks like a scanned image. OCR is not included in this version, so nothing could be extracted. Read the report in the viewer and enter the findings by hand.</p>');
+    return;
+  }
+  const exist = new Set(state.variants.map((v) => `${normGene(v.gene)}|${normProtein(v.variant)}|${v.hgvsC}`));
+  const rows = x.cands.map((c) => {
+    const dup = exist.has(`${c.gene}|${normProtein(c.variant)}|${c.hgvsC}`);
+    return `<tr><td><input type="checkbox" data-cand="${c.cid}" ${dup ? 'disabled' : ''} aria-label="Select ${esc(c.gene)} ${esc(c.variant)}"></td>
+      <td><strong>${esc(c.partner ? c.partner + '::' + c.gene : c.gene)}</strong><div class="small muted">${esc(c.variant || c.hgvsC || '—')}${c.variant && c.hgvsC ? ' · ' + esc(c.hgvsC) : ''}</div></td>
+      <td>${esc((TYPE_LABEL[c.type] || 'type unclear').split(' (')[0])}</td><td>${c.vaf !== '' ? esc(c.vaf) + '%' + (c.vafLabelled ? '' : ' <span class="small muted">(unlabelled)</span>') : '—'}</td><td>${c.depth !== '' ? esc(c.depth) + '×' : '—'}</td>
+      <td>${chip(c.conf === 'high' ? 'More complete' : 'Partial', c.conf === 'high' ? 'mint' : 'peach')}${dup ? ' ' + chip('already added', 'grey') : ''}</td>
+      <td class="small"><button class="link-btn" data-action="pdfGoto" data-p="${c.page}">p.${c.page}</button> <span class="mono">${esc(c.snippet)}</span></td></tr>`;
+  }).join('');
+  const cs = x.caseSug.map((s, i) => `<tr><td>${esc(s.label)}</td><td><strong>${esc(s.field === 'cancer' ? cancerLabel(s.value) : s.field === 'specimen' ? (SPECIMENS.find((q) => q[0] === s.value) || [0, s.value])[1] : s.shown)}</strong></td><td class="small"><button class="link-btn" data-action="pdfGoto" data-p="${s.page}">p.${s.page}</button> <span class="mono">${esc(s.snippet)}</span></td><td class="right">${s.applied ? chip('Applied — check the page', 'mint') : `<button class="btn btn-secondary btn-sm" data-action="applyCaseSug" data-i="${i}">Apply</button>`}</td></tr>`).join('');
+  box.innerHTML = `<div class="callout callout-peach"><div class="callout-title">Experimental: proposals only</div><div class="callout-body"><p>Found ${x.lineCount} text lines on ${x.pages.length} page(s). Items below are <strong>proposals</strong>. Add only what you can see on the page; each added item must then be verified. A missing item means “not found by this heuristic”, not “absent from the report”. Tested only on synthetic fictional reports.</p></div></div>
+    <h4 class="sub-title">Case-level suggestions</h4>
+    ${cs ? `<div class="table-wrap"><table class="table table-compact"><tbody>${cs}</tbody></table></div>` : '<p class="muted">None found.</p>'}
+    <h4 class="sub-title">Candidate alterations (${x.cands.length})</h4>
+    ${rows ? `<div class="table-wrap"><table class="table table-compact"><thead><tr><th></th><th>Alteration</th><th>Type</th><th>VAF</th><th>Depth</th><th>Completeness</th><th>Source text</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="btn-row"><button class="btn btn-primary" data-action="addCands">Add selected to findings</button><button class="btn btn-ghost" data-action="selectAllCands">Select all</button></div>` : '<p class="muted">No candidate alterations found.</p>'}
+    <details class="detail-box"><summary>Show all extracted text (so you can see what the heuristic saw)</summary><div class="mono pre-text">${x.pages.map((p) => `<div class="pg-head">— page ${p.n} —</div>` + p.lines.slice(0, 400).map((l) => `<div>${esc(l)}</div>`).join('')).join('')}</div></details>`;
+}
+
+function addCandidates() {
+  const x = state.extract; if (!x) return;
+  const ids = $$('#extractResult [data-cand]:checked').map((e) => e.dataset.cand);
+  if (!ids.length) { toast('Tick at least one candidate first.'); return; }
+  let n = 0;
+  ids.forEach((id) => {
+    const c = x.cands.find((q) => q.cid === id); if (!c) return;
+    state.variants.push(Object.assign(emptyVariant(), { gene: c.gene, variant: c.variant, hgvsC: c.hgvsC, transcript: c.transcript, type: c.type, vaf: c.vaf, depth: c.depth, partner: c.partner, cn: c.cn, origin: 'unknown', src: 'extracted', verified: false, page: c.page, snippet: c.snippet, uncertain: c.vafLabelled || c.vaf === '' ? [] : ['vaf'] }));
+    n++;
+  });
+  auditAdd('extraction-accepted', `${n} candidate variant(s) added as unverified`);
+  dataChanged(); renderVariantTable(); renderChecklist(); renderConfirmPanel(); renderExtraction();
+  toast(`${n} extracted item(s) added. Verify each against the PDF before confirming.`);
+}
+function applyCaseSuggestion(i) {
+  const x = state.extract; if (!x) return; const s = x.caseSug[i]; if (!s) return;
+  state.case[s.field] = s.value; s.applied = true; auditAdd('case-suggestion-applied', `field ${s.field}`);
+  dataChanged(); fillCaseForm(); renderChecklist(); renderConfirmPanel(); renderExtraction(); toast(`${s.label} set from the PDF. Check it against the page.`);
+}
+const unverifiedExtracted = () => state.variants.filter((v) => v.src === 'extracted' && !v.verified);
+
+/* =====================================================================
+   14. STAGE 2 — PROTECTED CASE FILE (passphrase encryption)
+   ---------------------------------------------------------------------
+   Plain language: you can save the whole case into one text file that is
+   scrambled with a passphrase you choose. Without the passphrase it
+   cannot be read. The passphrase is never stored and cannot be recovered.
+   Technical: AES-256-GCM, key from PBKDF2-SHA-256 (250 000 rounds) with a
+   random salt; the browser's built-in Web Crypto does the work.
+   This protects a FILE you carry or e-mail. It does not replace your
+   institution's secure storage, access control or consent processes.
+   ===================================================================== */
+const PROTECT_FORMAT = 'onco-ngs-reader-case';
+const PROTECT_ITER = 250000;
+const b64 = {
+  enc: (buf) => { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); },
+  dec: (str) => Uint8Array.from(atob(str), (c) => c.charCodeAt(0))
+};
+async function deriveKey(pass, salt, iter) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+function casePayload() {
+  return {
+    appVersion: APP_VERSION, library: KB_SNAPSHOT, exportedAt: new Date().toISOString(),
+    case: state.case, variants: state.variants.map((v) => { const c = Object.assign({}, v); delete c.snippet; return c; }),
+    sampleId: state.sampleId, boardNotes: state.boardNotes, preparedBy: state.preparedBy, reviewedBy: state.reviewedBy,
+    liveResults: state.live.results, audit: audit.log
+  };
+}
+async function protectEncrypt(pass) {
+  if (!window.crypto || !crypto.subtle) throw new Error('This browser does not provide encryption (Web Crypto).');
+  if (!pass || pass.length < 10) throw new Error('Choose a passphrase of at least 10 characters.');
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pass, salt, PROTECT_ITER);
+  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: new TextEncoder().encode(PROTECT_FORMAT) }, key, new TextEncoder().encode(JSON.stringify(casePayload())));
+  return JSON.stringify({ format: PROTECT_FORMAT, v: 1, created: new Date().toISOString(), kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: PROTECT_ITER, salt: b64.enc(salt) }, cipher: { name: 'AES-GCM', iv: b64.enc(iv) }, data: b64.enc(data) }, null, 1);
+}
+/** Check the shape of decrypted data before trusting it. */
+function validPayload(p) {
+  const isStr = (x) => typeof x === 'string';
+  if (!p || typeof p !== 'object' || !p.case || !Array.isArray(p.variants)) return false;
+  if (!Object.keys(emptyCase()).every((k) => p.case[k] === undefined || isStr(p.case[k]))) return false;
+  return p.variants.every((v) => v && isStr(v.gene) && isStr(v.type) && isStr(v.variant || '') && isStr(v.hgvsC || ''));
+}
+async function protectDecrypt(text, pass) {
+  let f; try { f = JSON.parse(text); } catch (e) { throw new Error('That text is not a protected case file (it could not be read as JSON).'); }
+  if (!f || f.format !== PROTECT_FORMAT || f.v !== 1 || !f.kdf || !f.cipher || !f.data) throw new Error('This is not a protected case file made by Onco NGS Reader.');
+  const iter = Number(f.kdf.iterations);
+  if (!(iter >= 100000 && iter <= 2000000)) throw new Error('The file’s key settings are outside the accepted range.');
+  const key = await deriveKey(pass, b64.dec(f.kdf.salt), iter);
+  let plain;
+  try { plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64.dec(f.cipher.iv), additionalData: new TextEncoder().encode(PROTECT_FORMAT) }, key, b64.dec(f.data)); }
+  catch (e) { throw new Error('Wrong passphrase, or the file was damaged or altered.'); }
+  const p = JSON.parse(new TextDecoder().decode(plain));
+  if (!validPayload(p)) throw new Error('The file decrypted but its contents are not a valid case.');
+  return p;
+}
+function restorePayload(p) {
+  state.case = Object.assign(emptyCase(), p.case);
+  state.variants = p.variants.map((v) => Object.assign(emptyVariant(), v, { lookups: Object.assign(emptyLookups(), v.lookups || {}), snippet: '' }));
+  state.sampleId = p.sampleId || null; state.boardNotes = p.boardNotes || ''; state.preparedBy = p.preparedBy || ''; state.reviewedBy = p.reviewedBy || '';
+  state.live.results = p.liveResults && typeof p.liveResults === 'object' ? p.liveResults : {};
+  state.confirmed = false; state.confirmedAt = null; state.ui.selectedId = null; state.editingId = null;
+  let chain = 'no audit trail in the file';
+  if (Array.isArray(p.audit) && p.audit.length) { const v = auditVerify(p.audit); chain = v.ok ? `imported audit chain of ${v.count} entries verified` : `imported audit chain BROKEN at entry ${v.brokenAt}`; audit.log = p.audit; }
+  auditAdd('case-imported', `${chain}; confirmation cleared — the findings must be confirmed again`);
+  saveState(); renderCaseStrip();
+  return chain;
+}
+
+/* =====================================================================
+   15. STAGE 2 — "CONNECT" PAGE (live look-ups, audit trail, protected files)
+   ===================================================================== */
+function downloadText(name, text, mime = 'application/json') {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function connectStatusChip(key) {
+  const s = state.live.status[key];
+  if (!s) return chip('Not tested', 'grey');
+  return s.ok ? chip('Reachable · ' + stamp(s.at), 'mint') : chip('Not reachable', 'rose');
+}
+function renderConnect() {
+  const root = $('#connectRoot'); if (!root) return;
+  const ver = auditVerify(), last = audit.log.slice(-12).reverse();
+  const live = state.live;
+  root.innerHTML = `
+    <div class="grid grid-2">
+      <section class="card">
+        <div class="card-head"><h3>Live look-ups</h3>${HOSTED ? chip('Not available in hosted preview', 'peach') : live.enabled ? chip('On for this session', 'mint') : chip('Off', 'grey')}</div>
+        ${HOSTED ? callout('peach', 'Hosted preview', '<p>The page that hosts this preview blocks outside network connections, so live look-ups cannot run here. Run the app on your computer (see the README) to use them. The Stage 2 features that work offline remain available: PDF extraction, audit trail and protected files.</p>') : `
+        <p>When switched on, the app asks public services a question from <strong>your browser</strong>. It sends only what is listed below. No report, file name, patient detail or free text is sent.</p>
+        <label class="check-row"><input type="checkbox" id="liveToggle" ${live.enabled ? 'checked' : ''}> <span>I allow Onco NGS Reader to send the items listed below to these services for this session. I will not use real patient identifiers in gene, variant or tumour fields. Consent resets when the tab closes.</span></label>`}
+        <div class="table-wrap"><table class="table table-compact"><thead><tr><th>Service</th><th>What is sent</th><th>Status</th><th></th></tr></thead><tbody>
+          ${CONNECTORS.map((c) => `<tr><td><strong>${esc(c.name)}</strong><div class="small muted">${esc(c.key === 'oncokb' ? (proxyBase() || 'no address set') : c.host)}</div></td><td class="small">${esc(c.sends)}</td><td>${connectStatusChip(c.key)}${live.status[c.key] && !live.status[c.key].ok ? `<div class="small warn-line">${esc(live.status[c.key].detail)}</div>` : live.status[c.key] ? `<div class="small muted">${esc(live.status[c.key].detail || '')}</div>` : ''}</td><td class="right"><button class="btn btn-ghost btn-sm" data-action="testConn" data-key="${c.key}"${HOSTED || !live.enabled ? ' aria-disabled="true"' : ''}>Test</button></td></tr>`).join('')}
+        </tbody></table></div>
+        <p class="small muted">Retrieved results always show the time retrieved and the exact question asked. If a service cannot be reached, the app reports that and shows nothing in its place. Library tiers, clinician-entered records and live results are always labelled separately.</p>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h3>OncoKB (licensed)</h3></div>
+        <p>OncoKB requires an API token and licence terms for clinical-reporting use. A token must <strong>never</strong> be placed in a web page, so the app reaches OncoKB only through the small proxy in the <code>server</code> folder, which keeps your token on your own computer.</p>
+        <ol class="small"><li>Obtain access from OncoKB and agree to its terms.</li><li>On your computer set <code>ONCOKB_API_TOKEN</code> and run <code>node server/server.js</code>.</li><li>Open <code>http://127.0.0.1:8787/</code> (the proxy also serves this app), or enter its address below.</li></ol>
+        <label class="field"><span>Local proxy address</span><input type="text" id="oncokbUrl" value="${esc(live.oncokbUrl)}" placeholder="http://127.0.0.1:8787" spellcheck="false" ${HOSTED ? 'disabled' : ''}></label>
+        <p class="small muted">Only address ${esc('http://127.0.0.1')} or ${esc('http://localhost')} style local addresses are expected.</p>
+      </section>
+    </div>
+
+    <section class="card section-tight">
+      <div class="card-head"><h3>Audit trail</h3>${ver.ok ? chip(`Chain intact · ${ver.count} entries`, 'mint') : chip(`Chain broken at entry ${ver.brokenAt}`, 'rose')}</div>
+      <p>Each entry carries a fingerprint of the one before it, so an altered or removed entry is detectable. The trail records what was done, with no patient identifiers, and is kept in this browser tab only. Export it if you need to keep it.</p>
+      <div class="btn-row"><button class="btn btn-secondary btn-sm" data-action="auditVerify">Verify chain now</button><button class="btn btn-secondary btn-sm" data-action="auditCopy">Copy as JSON</button>${HOSTED ? '' : '<button class="btn btn-secondary btn-sm" data-action="auditDownload">Download JSON</button>'}<span id="auditResult" class="small" role="status"></span></div>
+      <div class="table-wrap"><table class="table table-compact"><thead><tr><th>#</th><th>Time (UTC)</th><th>Action</th><th>Detail</th><th>Fingerprint</th></tr></thead><tbody>${last.map((e) => `<tr><td>${e.seq}</td><td class="nowrap">${esc(e.ts.replace('T', ' ').slice(0, 19))}</td><td>${esc(e.action)}</td><td class="small">${esc(e.detail)}</td><td class="mono small">${esc(e.hash.slice(0, 12))}…</td></tr>`).join('')}</tbody></table></div>
+      <p class="small muted">Showing the latest ${last.length} of ${audit.log.length}. Current chain head: <span class="mono">${esc(auditHead().slice(0, 16))}…</span></p>
+    </section>
+
+    <div class="grid grid-2">
+      <section class="card">
+        <div class="card-head"><h3>Protected case file</h3></div>
+        <p>Save the case into one passphrase-protected text file (AES-256-GCM). The passphrase is never stored and <strong>cannot be recovered</strong>. After restoring a file, the findings must be confirmed again.</p>
+        <label class="field"><span>Passphrase (10+ characters)</span><input type="password" id="protectPass" autocomplete="new-password"></label>
+        <div class="btn-row"><button class="btn btn-primary btn-sm" data-action="protectMake">Create protected file</button></div>
+        <label class="field"><span>Protected text (copy it, or download it when running locally)</span><textarea id="protectOut" rows="4" readonly placeholder="The protected file text appears here."></textarea></label>
+        <div class="btn-row"><button class="btn btn-secondary btn-sm" data-action="protectCopy">Copy</button>${HOSTED ? '' : '<button class="btn btn-secondary btn-sm" data-action="protectDownload">Download file</button>'}</div>
+        <p id="protectMsg" class="small" role="status"></p>
+      </section>
+      <section class="card">
+        <div class="card-head"><h3>Restore a protected file</h3></div>
+        <label class="field"><span>Choose a file, or paste its text</span><input type="file" id="protectFile" accept=".json,.txt,application/json,text/plain"></label>
+        <label class="field"><span>Protected text</span><textarea id="protectIn" rows="4" placeholder="Paste the protected file text here."></textarea></label>
+        <label class="field"><span>Passphrase</span><input type="password" id="restorePass" autocomplete="off"></label>
+        <div class="btn-row"><button class="btn btn-primary btn-sm" data-action="protectRestore">Decrypt and restore</button></div>
+        <p id="restoreMsg" class="small" role="status"></p>
+        <p class="small muted">This protects a file. It does not replace institutional secure storage, access control or consent.</p>
+      </section>
+    </div>
+
+    <section class="card section-tight">
+      <div class="card-head"><h3>Versions and what still needs a hosted back end</h3></div>
+      ${kv([['App version', esc(APP_VERSION)], ['Curated library snapshot', esc(KB_SNAPSHOT)], ['PDF library', 'pdf.js 3.11.174 (Apache-2.0), bundled'], ['Mode', HOSTED ? 'Hosted preview (live look-ups disabled by the host)' : 'Local']])}
+      <p class="small">Not built, because it needs hosting, identity and governance: user accounts and sign-in, a central encrypted database, role-based access, institution-controlled retention, server-side audit storage, OCR for scanned reports, live CIViC/ClinGen connectors, and independent clinical validation of the rule library.</p>
+    </section>`;
 }
 
 /* =====================================================================
@@ -2216,19 +3017,19 @@ function renderCaseStrip() {
 
 /* ---------- DASHBOARD ---------- */
 const FEATURES = [
-  ['Manual case and variant entry', 'working', 'Runs entirely in your browser. Nothing is sent anywhere.'],
-  ['PDF upload and side-by-side viewing', 'working', 'The PDF stays in your browser tab and is only displayed to you, not read by the app.'],
-  ['Automatic extraction of variants from a PDF', 'backend', 'Not implemented. Needs a validated parser (OCR for scans) on secure infrastructure, with human verification of every field.'],
+  ['Manual case and variant entry', 'working', 'Runs entirely in your browser. Nothing is sent anywhere unless you switch on live look-ups.'],
+  ['PDF viewing (canvas viewer)', 'working', 'The PDF is drawn in your browser with the bundled pdf.js library. It is never uploaded.'],
+  ['PDF text extraction (experimental)', 'partial', 'Proposes genes, variants, VAF, depth, fusions, copy number and case-level items from PDFs with selectable text. Every item must be added by you and verified one by one. Tested only on synthetic fictional reports; no OCR for scans.'],
   ['Variant interpretation', 'partial', `Curated library: ${Object.keys(GENES).length} genes and ${RULES.length} interpretation rules. Everything else is shown as “not curated”.`],
   ['Evidence tiers (AMP/ASCO/CAP, ESCAT, OncoKB)', 'partial', 'Hand-curated snapshot only where the developer was confident; blank otherwise. Verify at the source.'],
-  ['Live ClinVar, ClinGen, CIViC, COSMIC, CGI look-ups', 'backend', 'Not implemented. The app builds search links and lets you record what you found, with the date.'],
-  ['OncoKB data', 'backend', 'Needs an API token and licence terms suitable for clinical reporting (Stage 2).'],
-  ['FDA and EMA approval status', 'partial', 'FDA wording is curated for listed drugs. EMA status is not curated: check the EPAR.'],
-  ['Clinical-trial discovery', 'partial', 'Builds ClinicalTrials.gov search links only. No eligibility matching.'],
-  ['AI interpretation', 'none', 'Deliberately not built in this stage.'],
+  ['Live ClinVar, PubMed, ClinicalTrials.gov, openFDA look-ups', 'partial', 'Built and opt-in, with time-stamped, query-stamped results. Local use only: the hosted preview blocks outside connections. Tested here only against recorded response shapes, not the live services.'],
+  ['OncoKB data', 'partial', 'Reachable only through the optional local proxy that keeps your licensed token off the web page. Needs your own OncoKB token and licence terms.'],
+  ['CIViC, ClinGen, COSMIC, Cancer Genome Interpreter', 'backend', 'No connector yet: search links plus a record-your-own-look-up form. Needs a server-side integration.'],
+  ['FDA label text', 'partial', 'Curated wording for listed drugs, plus an on-demand openFDA label check (local use). EMA status is not curated.'],
+  ['Audit trail and protected case files', 'working', 'Tamper-evident hash-chained audit trail; passphrase-encrypted case files (AES-256-GCM). Per tab, no server.'],
   ['Learning Centre, flash-cards, quiz, calculators', 'working', 'Fully functional offline.'],
-  ['Tumour board summary and printing', 'working', 'Print or save as PDF from your browser.'],
-  ['Accounts, audit trail, secure patient-data storage', 'backend', 'Not implemented. Required before real patient data is used.']
+  ['Tumour board summary and printing', 'working', 'Print or save as PDF (local); copy as text (everywhere). Includes data-provenance and audit references.'],
+  ['Accounts, central secure database, role-based access', 'backend', 'Not built. Needs hosting, identity management and institutional governance before real patient data is used.']
 ];
 const FEATURE_TONE = { working: ['Working now', 'mint'], partial: ['Partly working', 'peach'], backend: ['Needs backend / APIs', 'blue'], none: ['Not built', 'grey'] };
 
@@ -2266,7 +3067,7 @@ function renderDashboard() {
   root.innerHTML = `
     <section class="hero">
       <div class="hero-blobs" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
-      <p class="eyebrow">Stage 1 · Frontend prototype</p>
+      <p class="eyebrow">Stage 2 · Evidence-connected prototype</p>
       <h1>Read the genome<br>behind every cancer.</h1>
       <p class="lead">Onco NGS Reader helps medical oncologists and molecular pathologists work through NGS reports — from the basics to the details — with the evidence, its limits and the uncertainty always in view.</p>
       <div class="btn-row center">
@@ -2330,6 +3131,8 @@ function renderDashboard() {
           <li>Every statement of approval names its status: approved, tumour-agnostic, other-tumour, evolving, investigational or not supported.</li>
           <li>You must confirm the findings before any interpretation appears.</li>
           <li>Sources are PubMed-verified; web addresses are marked as not live-checked.</li>
+          <li>Live results, library tiers and your own look-ups are always labelled separately, with times and the exact question asked.</li>
+          <li>PDF-extracted items stay “unverified” until you check each against its source page.</li>
         </ul>
       </div>
     </section>
@@ -2378,14 +3181,15 @@ function renderVariantTable() {
       const fl = variantFlags(v);
       const m = fl.filter((f) => f.level === 'missing').length, u = fl.filter((f) => f.level === 'uncertain').length, w = fl.filter((f) => f.level === 'warn').length;
       const chips = [m ? chip(`${m} missing`, 'rose') : '', u ? chip(`${u} uncertain`, 'peach') : '', w ? chip(`${w} warning${w > 1 ? 's' : ''}`, 'peach') : '', (!m && !u && !w) ? chip('Complete', 'mint') : ''].join(' ');
+      const ext = v.src === 'extracted' ? (v.verified ? chip('Extracted · verified', 'mint') : chip('Extracted · verify', 'rose')) : '';
       return `<tr>
-        <td><strong>${esc(varLabel(v))}</strong>${v.hgvsC ? `<div class="small muted mono">${esc(v.hgvsC)}${v.transcript ? ' · ' + esc(v.transcript) : ''}</div>` : ''}</td>
+        <td><strong>${esc(varLabel(v))}</strong> ${ext}${v.hgvsC ? `<div class="small muted mono">${esc(v.hgvsC)}${v.transcript ? ' · ' + esc(v.transcript) : ''}</div>` : ''}${v.src === 'extracted' && v.snippet ? `<div class="small muted mono src-line">p.${esc(v.page)}: ${esc(v.snippet)}</div>` : ''}</td>
         <td>${esc((TYPE_LABEL[v.type] || '—').split(' (')[0])}</td>
         <td>${v.vaf !== '' ? esc(v.vaf) + '%' : '—'}</td>
         <td>${v.depth !== '' ? esc(v.depth) + '×' : '—'}</td>
         <td>${esc((ORIGINS.find((o) => o[0] === v.origin) || ['', '—'])[1].split(' (')[0])}</td>
         <td>${chips}</td>
-        <td class="right nowrap"><button class="btn btn-ghost btn-sm" data-action="editVariant" data-id="${v.id}">Edit</button><button class="btn btn-ghost btn-sm danger" data-action="deleteVariant" data-id="${v.id}">Delete</button></td>
+        <td class="right nowrap">${v.src === 'extracted' && !v.verified ? `<button class="btn btn-secondary btn-sm" data-action="verifyVariant" data-id="${v.id}">I checked it</button>${v.page && state.file.valid ? `<button class="btn btn-ghost btn-sm" data-action="pdfGoto" data-p="${esc(v.page)}">Source p.${esc(v.page)}</button>` : ''}` : ''}<button class="btn btn-ghost btn-sm" data-action="editVariant" data-id="${v.id}">Edit</button><button class="btn btn-ghost btn-sm danger" data-action="deleteVariant" data-id="${v.id}">Delete</button></td>
       </tr>`;
     }).join('')}</tbody></table></div>`;
 }
@@ -2402,15 +3206,16 @@ function renderChecklist() {
 
 function renderConfirmPanel() {
   const el = $('#confirmPanel'); if (!el) return;
-  const n = state.variants.length;
+  const n = state.variants.length, unver = unverifiedExtracted().length;
   if (state.confirmed) {
     el.innerHTML = `<div class="callout callout-mint"><div class="callout-title">✓ Findings confirmed</div><div class="callout-body">You confirmed these findings${state.confirmedAt ? ' on ' + esc(new Date(state.confirmedAt).toLocaleString()) : ''}. Editing any detail will clear this confirmation.<div class="btn-row">${goBtn('interpreter', 'Open Variant Interpreter')}${goBtn('actionability', 'Actionability', 'secondary')}${goBtn('summary', 'Tumour board summary', 'secondary')}</div></div></div>`;
     return;
   }
   el.innerHTML = `<div class="confirm-box">
-    <label class="check-row"><input type="checkbox" id="confirmCheck"${n ? '' : ' disabled'}> <span>I have compared every entry above with the original laboratory report and I confirm that the case details and variants are accurate. I understand this tool provides educational decision support and does not replace the laboratory report or a molecular tumour board.</span></label>
+    ${unver ? callout('rose', `${unver} extracted entr${unver === 1 ? 'y needs' : 'ies need'} verification`, '<p>Entries proposed from the PDF must each be compared with their source page and marked “I checked it” in the table above before the findings can be confirmed.</p>') : ''}
+    <label class="check-row"><input type="checkbox" id="confirmCheck"${n && !unver ? '' : ' disabled'}> <span>I have compared every entry above with the original laboratory report and I confirm that the case details and variants are accurate. I understand this tool provides educational decision support and does not replace the laboratory report or a molecular tumour board.</span></label>
     <button class="btn btn-primary" id="confirmBtn" data-action="confirm" disabled>Confirm findings and enable interpretation</button>
-    <p class="small muted">${n ? 'Tick the box to enable the button.' : 'Add at least one variant first.'}</p></div>`;
+    <p class="small muted">${!n ? 'Add at least one variant first.' : unver ? 'Verify the extracted entries first.' : 'Tick the box to enable the button.'}</p></div>`;
 }
 
 function renderFileCard() {
@@ -2418,30 +3223,34 @@ function renderFileCard() {
   const f = state.file;
   if (!f.name) { el.innerHTML = ''; return; }
   const kb = f.size > 1048576 ? (f.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(f.size / 1024)) + ' KB';
+  const ready = f.valid === true && pdfState.doc;
   el.innerHTML = `<div class="file-card">
-    <div class="file-head"><span class="file-ico" aria-hidden="true">PDF</span><div><strong>${esc(f.name)}</strong><div class="small muted">${kb} · ${f.valid === true ? 'Valid PDF header found' : f.valid === false ? 'Does not look like a PDF file' : 'Checking…'}</div></div>
+    <div class="file-head"><span class="file-ico" aria-hidden="true">PDF</span><div><strong>${esc(f.name)}</strong><div class="small muted">${kb} · ${f.valid === true ? 'Valid PDF · ' + (f.pages || '?') + ' page(s)' : f.valid === false ? 'Does not look like a readable PDF file' : 'Checking…'}</div></div>
       <button class="btn btn-ghost btn-sm" data-action="removeFile">Remove</button></div>
-    ${callout('blue', 'Automatic extraction is not available in this prototype', `<p>The file is shown only in your own browser and is <strong>not uploaded, read or interpreted</strong> by the app. Read the report in the viewer and enter or check each finding in the forms below. Reliable PDF extraction (including OCR for scanned reports) needs validated software on secure infrastructure — planned for Stage 2, always with human verification.</p>`)}
-    ${f.valid && f.url ? `<object class="pdf-view" data="${esc(f.url)}" type="application/pdf" aria-label="Uploaded report preview"><p class="muted">Your browser cannot show PDFs inline. ${extLink(f.url, 'Open the PDF in a new tab')}</p></object>` : ''}
+    ${callout('blue', 'Stays in your browser', `<p>The file is displayed and read <strong>only on your device</strong>; it is not uploaded. The file name is not written to the audit trail or saved. “Extract” proposes findings from the text; you decide what to add, and each added item must be verified against its page.</p>`)}
+    ${ready ? `<div id="pdfViewer" class="pdf-viewer"><div class="pdf-bar"><button class="btn btn-secondary btn-sm" data-action="pdfPrev" aria-label="Previous page">‹ Prev</button><span id="pdfPageLabel" class="small">Page 1 of ${f.pages}</span><button class="btn btn-secondary btn-sm" data-action="pdfNext" aria-label="Next page">Next ›</button><span class="spacer"></span><button class="btn btn-ghost btn-sm" data-action="pdfZoomOut" aria-label="Zoom out">−</button><button class="btn btn-ghost btn-sm" data-action="pdfZoomIn" aria-label="Zoom in">+</button></div>
+      <div class="pdf-canvas-wrap"><canvas id="pdfCanvas" aria-label="PDF page preview"></canvas></div></div>
+      <div class="btn-row"><button class="btn btn-primary" data-action="runExtract">Extract text and propose findings (experimental)</button></div>` : ''}
+    ${f.valid === true && !pdfState.doc && f.error ? callout('peach', 'The PDF could not be displayed', `<p>${esc(f.error)}</p>`) : ''}
+    <div id="extractResult"></div>
   </div>`;
+  if (ready) { pdfRender(); renderExtraction(); }
 }
 
-function handleFile(file) {
+async function handleFile(file) {
   if (!file) return;
-  if (state.file.url) URL.revokeObjectURL(state.file.url);
-  state.file = { name: file.name, size: file.size, valid: null, url: '' };
+  state.extract = null; pdfClose();
+  state.file = { name: file.name, size: file.size, valid: null, url: '', pages: 0, error: '' };
   renderFileCard();
-  const reader = new FileReader();
-  reader.onload = () => {
-    const h = new Uint8Array(reader.result);
-    const ok = h.length >= 5 && h[0] === 0x25 && h[1] === 0x50 && h[2] === 0x44 && h[3] === 0x46 && h[4] === 0x2d; // "%PDF-"
-    state.file.valid = ok;
-    if (ok) state.file.url = URL.createObjectURL(file);
-    renderFileCard();
-    toast(ok ? 'PDF loaded locally — enter the findings below.' : 'That file does not appear to be a PDF.');
-  };
-  reader.onerror = () => { state.file.valid = false; renderFileCard(); };
-  reader.readAsArrayBuffer(file.slice(0, 8));
+  const head = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+  const ok = head.length >= 5 && head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46 && head[4] === 0x2d; // "%PDF-"
+  if (!ok) { state.file.valid = false; renderFileCard(); toast('That file does not appear to be a PDF.'); return; }
+  state.file.valid = true;
+  try { state.file.pages = await pdfOpen(file); }
+  catch (e) { state.file.error = e.message || 'Unknown error'; state.file.pages = 0; }
+  auditAdd('pdf-loaded', state.file.error ? 'PDF opened with an error' : `PDF opened locally (${state.file.pages} page(s), ${Math.max(1, Math.round(file.size / 1024))} KB)`);
+  renderFileCard();
+  toast(state.file.error ? 'The PDF could not be displayed.' : 'PDF loaded locally. Enter the findings or try the experimental extraction.');
 }
 
 /* ---- variant form handling ---- */
@@ -2484,7 +3293,7 @@ function submitVariant() {
   if (f.cn !== '' && (num(f.cn) === null || num(f.cn) < 0)) return fail('Copy number must be a positive number.');
   if (state.editingId) {
     const v = state.variants.find((x) => x.id === state.editingId);
-    if (v) Object.assign(v, f, { uncertain: (v.uncertain || []).filter((u) => !f[u] || f[u] === '') });
+    if (v) { Object.assign(v, f, { uncertain: (v.uncertain || []).filter((u) => !f[u] || f[u] === '') }); if (v.src === 'extracted') v.verified = false; }
     toast('Variant updated. Please re-confirm the findings.');
   } else {
     state.variants.push(Object.assign(emptyVariant(), f));
@@ -2503,31 +3312,42 @@ function editVariant(id) {
   $('#variantFormCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
   $('#v_gene').focus();
 }
-function deleteVariant(id) {
+function deleteVariant(id, btn) {
   const v = state.variants.find((x) => x.id === id); if (!v) return;
-  if (!window.confirm(`Delete ${varLabel(v)}?`)) return;
+  if (!inlineConfirm(btn, 'Really delete?')) return;
   state.variants = state.variants.filter((x) => x.id !== id);
   if (state.ui.selectedId === id) state.ui.selectedId = null;
+  auditAdd('variant-deleted', varLabel(v));
   dataChanged(); renderVariantTable(); renderChecklist(); renderConfirmPanel();
+}
+/** Two-step confirmation inside the page (browser pop-up dialogs are blocked in some hosts). Returns true on the confirming click. */
+function inlineConfirm(btn, label) {
+  if (!btn) return true;
+  if (btn.dataset.armed === '1') { btn.dataset.armed = ''; return true; }
+  const old = btn.textContent; btn.dataset.armed = '1'; btn.textContent = label; btn.classList.add('armed');
+  setTimeout(() => { if (btn.isConnected && btn.dataset.armed === '1') { btn.dataset.armed = ''; btn.textContent = old; btn.classList.remove('armed'); } }, 4000);
+  return false;
 }
 function loadSample(id) {
   const s = SAMPLES.find((x) => x.id === id); if (!s) return;
   state.case = Object.assign(emptyCase(), s.case);
   state.variants = s.variants.map((v) => Object.assign(emptyVariant(), v, { uncertain: v.uncertain || [], lookups: emptyLookups() }));
-  state.sampleId = id; state.ui.selectedId = null;
+  state.sampleId = id; state.ui.selectedId = null; state.live.results = {};
+  auditAdd('case-loaded', `fictional sample ${id}`);
   state.confirmed = false; state.confirmedAt = null; state.boardNotes = ''; state.editingId = null;
   saveState(); renderCaseStrip();
   toast(`Sample ${s.title.split(' · ')[0]} loaded (fictional). Review and confirm the findings.`);
   navigate('upload');
 }
-function resetAll() {
-  if (!window.confirm('Clear the current case and all entered data from this browser tab?')) return;
+function resetAll(btn) {
+  if (!inlineConfirm(btn, 'Click again to clear everything')) return;
   state.case = emptyCase(); state.variants = []; state.confirmed = false; state.confirmedAt = null; state.sampleId = null;
   state.boardNotes = ''; state.preparedBy = ''; state.reviewedBy = ''; state.editingId = null; state.ui.selectedId = null;
-  if (state.file.url) URL.revokeObjectURL(state.file.url);
-  state.file = { name: '', size: 0, valid: null, url: '' };
+  state.live.results = {}; state.live.status = {}; pdfClose();
+  state.file = { name: '', size: 0, valid: null, url: '', pages: 0 };
   store.remove('sessionStorage', SESSION_KEY);
-  renderCaseStrip(); route(); toast('All data cleared.');
+  auditAdd('data-cleared', 'case, findings and retrieved results cleared from this tab (audit trail kept)');
+  renderCaseStrip(); route(); toast('Case data cleared. The audit trail is kept for this session.');
 }
 
 function renderUpload() {
@@ -2751,14 +3571,17 @@ function detailClassification(it) {
 
   const ok = ctx && ctx.oncokb && it.match === 'exact';
   h += sec('OncoKB therapeutic evidence level', `${ok ? `<p class="big-val">${esc(ctx.oncokb)}</p><p class="small muted">Curated by the developer from the published level definitions and the FDA approval status; <strong>not retrieved from OncoKB</strong>. OncoKB levels are versioned and updated and may differ from this entry, so confirm on oncokb.org and note the date.</p>` : `<p class="muted">Not curated here. Open OncoKB to view the current level for this alteration and tumour type.</p>`}
-    ${recorded(L.oncokb.level, L.oncokb.date)}<p class="small muted">OncoKB is free for research and educational use; clinical-reporting use and API access need a licence/token (Stage 2).</p>`, chip(ok ? 'Curated snapshot' : 'Not curated', ok ? 'lav' : 'grey'));
+    ${recorded(L.oncokb.level, L.oncokb.date)}
+    <div class="live-zone"><p class="small"><strong>Live (optional):</strong> ${liveBtn('liveOncokb', `data-id="${v.id}"`, 'Retrieve from OncoKB via local proxy')} <span class="small muted">needs your licensed token on the local proxy</span></p>${oncokbBlock(v)}</div>
+    <p class="small muted">OncoKB is free for research and educational use; clinical-reporting use and API access need a licence/token. The token stays on the local proxy, never in this page.</p>`, state.live.results[`${v.id}:oncokb`] && !state.live.results[`${v.id}:oncokb`].error ? chip('Retrieved via proxy', 'mint') : chip(ok ? 'Curated snapshot' : 'Not curated', ok ? 'lav' : 'grey'));
 
   h += sec('ClinVar classification and review status',
-    `<p><strong>Not retrieved.</strong> This app has <u>not</u> queried ClinVar. ${recorded(L.clinvar.cls ? `${L.clinvar.cls}${L.clinvar.stars !== '' ? ` · ${L.clinvar.stars} star(s)` : ''}` : '', L.clinvar.date)}</p>
+    `${state.live.results[`${v.id}:clinvar`] && !state.live.results[`${v.id}:clinvar`].error ? '' : `<p><strong>Not retrieved.</strong> This app has <u>not</u> queried ClinVar for this variant. ${recorded(L.clinvar.cls ? `${L.clinvar.cls}${L.clinvar.stars !== '' ? ` · ${L.clinvar.stars} star(s)` : ''}` : '', L.clinvar.date)}</p>`}
+    <div class="live-zone"><p class="small"><strong>Live (optional):</strong> ${liveBtn('liveClinvar', `data-id="${v.id}"`, 'Retrieve from NCBI ClinVar')} <span class="small muted">sends the gene and variant name to NCBI</span></p>${clinvarBlock(v)}${state.live.results[`${v.id}:clinvar`] ? recorded(L.clinvar.cls ? `${L.clinvar.cls}${L.clinvar.stars !== '' ? ` · ${L.clinvar.stars} star(s)` : ''}` : '', L.clinvar.date) : ''}</div>
     <details class="detail-box"><summary>How to read ClinVar review status</summary><p class="small">0 stars: no assertion criteria / no classification provided · 1 star: criteria provided, single submitter or conflicting classifications · 2 stars: criteria provided, multiple submitters, no conflicts · 3 stars: reviewed by expert panel · 4 stars: practice guideline. Check the classification <em>type</em>: ClinVar remains largely germline-oriented.</p></details>`,
-    chip('Not retrieved', 'grey'));
+    state.live.results[`${v.id}:clinvar`] && !state.live.results[`${v.id}:clinvar`].error ? chip('Retrieved live', 'mint') : chip('Not retrieved', 'grey'));
 
-  h += sec('ClinGen and CIViC', `<p><strong>Not retrieved.</strong> The app has not queried ClinGen or CIViC.</p>${recorded(L.clingen.cls, L.clingen.date)}${recorded(L.civic.cls, L.civic.date)}<p class="small muted">ClinGen offers expert-panel variant curation and gene–disease validity; CIViC offers community-curated evidence items with evidence levels and direction.</p>`, chip('Not retrieved', 'grey'));
+  h += sec('ClinGen and CIViC', `<p><strong>Not retrieved.</strong> There is no ClinGen or CIViC connector in this version; the app has not queried them. Use the search links in the Sources tab and record what you find below.</p>${recorded(L.clingen.cls, L.clingen.date)}${recorded(L.civic.cls, L.civic.date)}<p class="small muted">ClinGen offers expert-panel variant curation and gene–disease validity; CIViC offers community-curated evidence items with evidence levels and direction.</p>`, chip('Not retrieved', 'grey'));
 
   h += sec('Regulatory status (FDA / EMA)',
     `<p><strong>FDA</strong> — ${fdaDrugs.length ? `approved options curated for this biomarker in your tumour type: <strong>${esc(fdaDrugs.join('; '))}</strong>. Confirm the exact indication and companion-diagnostic requirement on the label.` : 'no FDA-approved option is curated for this biomarker in your tumour type.'}</p>
@@ -2831,6 +3654,7 @@ function detailSources(it) {
       <p class="small muted">These buttons only <strong>open a search page</strong> on the external site. The app has not retrieved anything from these databases. Web addresses were not live-checked.</p>
       <div class="chips">${links.map(([n, u]) => `<a class="btn btn-secondary btn-sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(n)} ↗</a>`).join('')}</div>
       <p class="small warn-line">⚠ Do not paste identifiable patient information into external tools without consent and governance.</p></section>
+    <section class="block"><h4>Literature search (live, optional)</h4><p class="small">${liveBtn('livePubmed', `data-id="${it.v.id}"`, 'Search PubMed for this variant')} <span class="small muted">sends the gene, protein change and tumour-type label to NCBI</span></p>${pubmedBlock(it.v)}</section>
     <section class="block"><h4>References behind the curated entry</h4>${uniq.length ? `<ul class="ref-list">${uniq.map((id) => { const r = REF_BY_ID[id]; return `<li>${esc(refCitation(r))} ${extLink(refLink(r), r.kind === 'paper' ? 'PubMed' : 'Site')}</li>`; }).join('')}</ul>` : '<p class="muted">No curated references for this variant.</p>'}
       <p class="small muted">Curated library snapshot: ${KB_SNAPSHOT}. PMIDs and DOIs were matched in PubMed on that date. See the Evidence Library for details.</p></section>`;
 }
@@ -2896,6 +3720,14 @@ function passFilter(opt) {
   return true;
 }
 
+/** Buttons (and results) for checking the live openFDA label of each drug in an option. */
+function fdaControls(r) {
+  if (!['approved', 'agnostic', 'approved-other'].includes(r.status)) return '';
+  const names = genericNames(r.drug);
+  if (!names.length) return '';
+  return `<div class="live-zone">${names.map((n) => `<div>${liveBtn('liveFda', `data-name="${esc(n)}"`, `Check FDA label: ${n}`)}${fdaBlock(n)}</div>`).join('')}</div>`;
+}
+
 function optionCard(opt) {
   const r = opt.rx, ft = fitFor(opt);
   return `<article class="rx-card">
@@ -2906,6 +3738,7 @@ function optionCard(opt) {
     ${opt.warn ? `<p class="small warn-line">⚠ ${esc(opt.warn)}</p>` : ''}
     ${r.caution ? `<p class="small warn-line">⚠ ${esc(r.caution)}</p>` : ''}
     ${r.refs && r.refs.length ? `<p class="small">Evidence: ${refChips(r.refs)}</p>` : '<p class="small muted">No primary trial reference curated — see the FDA label.</p>'}
+    ${fdaControls(r)}
   </article>`;
 }
 
@@ -2981,6 +3814,7 @@ function renderActBody() {
     body = `<div class="callout callout-peach"><div class="callout-title">Clinical trials</div><div class="callout-body"><p>The app <strong>does not retrieve, match or verify trials</strong>. The buttons below open a search on ClinicalTrials.gov using your tumour type and gene. Check eligibility, recruiting status and sites yourself, and never share identifiable information with a trial site without consent.</p></div></div>
       <div class="card"><h4>Search ClinicalTrials.gov</h4><div class="chips">${genes.length ? genes.map((g) => `<a class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer" href="https://clinicaltrials.gov/search?${cond ? 'cond=' + encodeURIComponent(cond) + '&' : ''}term=${encodeURIComponent(g)}">${esc(g)}${cond ? ' · ' + esc(cond) : ''} ↗</a>`).join('') : '<span class="muted">No genes to search.</span>'}
       ${cond ? `<a class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer" href="https://clinicaltrials.gov/search?cond=${encodeURIComponent(cond)}">All trials · ${esc(cond)} ↗</a>` : ''}</div></div>
+      <div class="card"><h4>Live trial search (ClinicalTrials.gov API, optional)</h4>${genes.length ? genes.map((g) => `<div class="live-zone"><p class="small">${liveBtn('liveTrials', `data-gene="${esc(g)}"`, `Search recruiting trials: ${g}${cond ? ' · ' + cond : ''}`)}</p>${trialsBlock(g)}</div>`).join('') : '<p class="muted">No genes to search.</p>'}<p class="small muted">Sends only the tumour-type label and gene symbol. Results are not an eligibility match.</p></div>
       <div class="card"><h4>Investigational or evolving classes noted in the library</h4>${inv.length ? `<ul>${inv.map((o) => `<li><strong>${esc(o.rx.drug)}</strong>${o.it ? ' — ' + esc(varLabel(o.it.v)) : ''}: ${esc(o.rx.indication)} ${statusChip(o.rx.status)}</li>`).join('')}</ul>` : '<p class="muted">None noted for this case.</p>'}
       <p class="small muted">No specific trial results are quoted. The library does not name unverified trials.</p></div>`;
   }
@@ -3128,15 +3962,16 @@ function checkQuiz() {
 
 /* ---------- EVIDENCE LIBRARY ---------- */
 const SOURCE_NOTES = [
-  ['OncoKB', 'Levels of evidence linking alterations to drugs', 'Search link only; levels shown are a curated snapshot where confident.', 'API token and licence terms for clinical-reporting use.'],
-  ['ClinVar', 'Submitted variant classifications with review status', 'Search link; you can record what you found.', 'NCBI programmatic access (E-utilities / downloads); read classification type and review status.'],
+  ['OncoKB', 'Levels of evidence linking alterations to drugs', 'Curated snapshot where confident, plus an optional retrieval through YOUR local proxy (token never in the page).', 'Your OncoKB token and licence terms for clinical-reporting use.'],
+  ['ClinVar', 'Submitted variant classifications with review status', 'Optional live retrieval (E-utilities): shows accession, each classification type, review stars, date; name-matching only. Search link and record form remain.', 'Server-side caching, versioning, and validation against a larger test set.'],
   ['ClinGen', 'Expert-panel variant curation, gene–disease validity', 'Search link; you can record what you found.', 'Public data/APIs; map VCEP classifications.'],
   ['CIViC', 'Community-curated evidence items', 'Search link; you can record what you found.', 'Open API; filter by evidence level and acceptance status.'],
   ['COSMIC', 'Somatic mutation frequencies', 'Search link only.', 'Registration / commercial licence depending on use.'],
   ['Cancer Genome Interpreter', 'Driver and biomarker annotation', 'Link only.', 'Check data-governance terms before sending any patient data.'],
-  ['FDA / EMA', 'Approved indications and companion diagnostics', 'FDA wording curated for listed drugs; EMA not curated.', 'openFDA / Drugs@FDA feeds; EMA product information (EPAR).'],
+  ['FDA / EMA', 'Approved indications and companion diagnostics', 'FDA wording curated; optional on-demand openFDA label text with its effective date. EMA not curated.', 'Automated label-change monitoring; EMA product information (EPAR) ingestion.'],
+  ['ClinicalTrials.gov', 'Registry of clinical studies', 'Optional live search of recruiting studies by tumour type and gene. No eligibility matching.', 'Site/eligibility matching with clinician review.'],
   ['NCCN', 'Proprietary guidelines', 'Not reproduced.', 'Licensed access only; cite version and date.'],
-  ['PubMed', 'Primary literature', 'Identifiers in this library were matched in PubMed on ' + KB_SNAPSHOT + '.', 'E-utilities for automated citation checks.']
+  ['PubMed', 'Primary literature', 'Library identifiers were matched in PubMed on ' + KB_SNAPSHOT + '; optional live literature search per variant.', 'Automated citation checking and evidence appraisal workflow.']
 ];
 
 function accessLog() { return store.get('localStorage', ACCESS_KEY, {}) || {}; }
@@ -3192,14 +4027,45 @@ function summaryModel() {
     refs: usedRefIds()
   };
 }
-const STD_LIMITS = [
-  `The curated library (snapshot ${KB_SNAPSHOT}) is small and hand-written. Evidence tiers and approval statements shown are not live-retrieved and must be verified at the source before use.`,
-  'ClinVar, ClinGen, CIViC, OncoKB, COSMIC and the Cancer Genome Interpreter were NOT queried by this application. Entries shown as “clinician-entered” were typed by the user and are not verified by the application.',
-  'EMA approval status is not curated. “Guideline-supported” status is not assigned because guideline text is not reproduced.',
-  'Pathogenicity (germline), oncogenicity (somatic) and clinical actionability are different questions and are reported separately.',
-  'Findings were entered by hand and confirmed by the clinician; the application did not read the source PDF.',
-  'This document is educational decision support, not a laboratory report, and does not replace the original report, clinical judgement or the molecular tumour board.'
-];
+function liveItems() {
+  const R = state.live.results, out = [];
+  state.variants.forEach((v) => {
+    const cv = R[`${v.id}:clinvar`];
+    if (cv && !cv.error) out.push({ src: 'NCBI ClinVar', what: varLabel(v), at: cv.at, text: cv.exact.length ? cv.exact.map((r) => `${r.accession}: ${r.classifications.map((c) => `${c.type}: ${c.description || '—'} (${c.stars !== null ? c.stars + '/4 stars' : 'review status n/a'}; last evaluated ${c.last || 'n/a'})`).join('; ') || 'no classification fields'}`).join(' | ') : 'no record with a matching name found (this does not prove absence)' });
+    const ok = R[`${v.id}:oncokb`];
+    if (ok && !ok.error) out.push({ src: 'OncoKB (local proxy)', what: varLabel(v), at: ok.at, text: `oncogenic: ${ok.oncogenic || '—'}; highest sensitive level: ${ok.sensitive || '—'}; highest resistance level: ${ok.resistance || '—'}; data version: ${ok.dataVersion || 'not returned'}` });
+    const pm = R[`${v.id}:pubmed`];
+    if (pm && !pm.error) out.push({ src: 'NCBI PubMed', what: varLabel(v), at: pm.at, text: `${pm.items.length} result(s) for: ${pm.query}` });
+  });
+  Object.keys(R).forEach((k) => {
+    if (k.startsWith('fda:') && !R[k].error) out.push({ src: 'openFDA label', what: k.slice(4), at: R[k].at, text: `label effective ${R[k].effective || 'n/a'}${R[k].version ? ' version ' + R[k].version : ''}` });
+    if (k.startsWith('trials:') && !R[k].error) out.push({ src: 'ClinicalTrials.gov', what: k.slice(7), at: R[k].at, text: `${R[k].total !== null ? R[k].total : '?'} recruiting stud(ies) matched: ${R[k].query}` });
+  });
+  return out;
+}
+function stdLimits() {
+  const live = liveItems().length;
+  return [
+    `The curated library (snapshot ${KB_SNAPSHOT}) is small and hand-written. Evidence tiers and approval statements shown are not live-retrieved and must be verified at the source before use.`,
+    live ? 'Only the sources listed under “Live-retrieved data” were queried by this application, at the times stated. ClinGen, CIViC, COSMIC and the Cancer Genome Interpreter were NOT queried. Entries shown as “clinician-entered” were typed by the user and are not verified by the application.' : 'ClinVar, ClinGen, CIViC, OncoKB, COSMIC and the Cancer Genome Interpreter were NOT queried by this application. Entries shown as “clinician-entered” were typed by the user and are not verified by the application.',
+    'EMA approval status is not curated. “Guideline-supported” status is not assigned because guideline text is not reproduced.',
+    'Pathogenicity (germline), oncogenicity (somatic) and clinical actionability are different questions and are reported separately.',
+    state.variants.some((v) => v.src === 'extracted') ? 'Some findings were proposed by an experimental PDF-text heuristic (tested only on synthetic reports) and were individually verified by the clinician against the source pages.' : 'Findings were entered by hand and confirmed by the clinician; the application did not read the source PDF.',
+    'This document is educational decision support, not a laboratory report, and does not replace the original report, clinical judgement or the molecular tumour board.'
+  ];
+}
+function provenanceCounts() {
+  const rec = state.variants.filter((v) => { const L = v.lookups; return L.clinvar.cls || L.clingen.cls || L.civic.cls || L.oncokb.level; }).length;
+  const ext = state.variants.filter((v) => v.src === 'extracted').length;
+  return { live: liveItems().length, recorded: rec, extracted: ext };
+}
+function liveSummaryHtml() {
+  const items = liveItems(), pc = provenanceCounts();
+  return `<section class="sum-sec"><h3>4b · Data provenance and live-retrieved data</h3>
+    <p class="small">Curated library snapshot ${KB_SNAPSHOT} · clinician-entered look-up records on ${pc.recorded} variant(s) · live-retrieved items: ${pc.live} · PDF-extracted entries (all verified): ${pc.extracted}.</p>
+    ${items.length ? `<div class="table-wrap"><table class="table table-compact"><thead><tr><th>Source</th><th>For</th><th>Retrieved (UTC)</th><th>Result</th></tr></thead><tbody>${items.map((i) => `<tr><td>${esc(i.src)}</td><td>${esc(i.what)}</td><td class="nowrap">${esc(stamp(i.at))}</td><td class="small">${esc(i.text)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No live look-ups were performed for this case.</p>'}</section>`;
+}
+
 const fitShort = (o) => { const f = fitFor(o); return f.head; };
 
 function renderSummary() {
@@ -3237,6 +4103,8 @@ function renderSummary() {
       <div class="table-wrap"><table class="table table-compact"><thead><tr><th>Alteration</th><th>AMP/ASCO/CAP (suggested)</th><th>ESCAT (curated)</th><th>OncoKB (curated)</th><th>Clinician-entered look-ups</th></tr></thead><tbody>${m.its.map((it) => { const a = classificationAMP(it); const esc2 = !IS_HEME(cs.cancer) && it.ctx && it.match === 'exact' && it.ctx.escat ? it.ctx.escat : null; const ok = it.ctx && it.match === 'exact' && it.ctx.oncokb ? it.ctx.oncokb : null; const l = lk(it.v); return `<tr><td><strong>${esc(varLabel(it.v))}</strong></td><td>${a.val ? esc(a.val) : '<span class="muted">Not assigned</span>'}</td><td>${esc2 ? esc(esc2) : '<span class="muted">Not curated</span>'}</td><td>${ok ? esc(ok) : '<span class="muted">Not curated</span>'}</td><td>${l.length ? l.map(esc).join('<br>') : '<span class="muted">None recorded</span>'}</td></tr>`; }).join('')}</tbody></table></div>
       <p class="small muted">ClinVar, ClinGen and CIViC were not retrieved by the application. Tiers are a curated snapshot (${KB_SNAPSHOT}); verify at source. Regulatory status: FDA curated for listed drugs; EMA not curated.</p></section>
 
+    ${liveSummaryHtml()}
+
     <section class="sum-sec"><h3>5 · Therapeutic implications</h3>
       <p class="small muted">Disease setting used for matching: ${esc(stg)}.</p>
       ${m.approved.length ? `<h4>Approved in this tumour type or tumour-agnostic</h4><ul class="plain">${m.approved.map(optLine).join('')}</ul>` : '<p class="muted">No approved options curated for the entered tumour type.</p>'}
@@ -3250,7 +4118,7 @@ function renderSummary() {
       ${m.its.filter((i) => i.ctx && i.ctx.res && i.ctx.res.length && !i.rule.roles.includes('resistance')).map((i) => `<p class="small"><strong>Watch for with ${esc(varLabel(i.v))}-directed therapy:</strong> ${i.ctx.res.map(esc).join(' · ')}</p>`).join('')}</section>
 
     <section class="sum-sec"><h3>7 · Uncertainties and limitations</h3>
-      <ul class="plain">${[...m.checks.map((c) => c.text), ...m.flags.flatMap(({ v, fl }) => fl.map((f) => `${varLabel(v)}: ${f.text}`)), ...m.its.filter((i) => ['norule', 'nogene'].includes(i.category)).map((i) => `${varLabel(i.v)}: no curated interpretation (${i.category === 'nogene' ? 'gene outside the prototype library' : 'variant not curated'}) — unassessed.`), ...STD_LIMITS].map((t) => `<li>${esc(t)}</li>`).join('')}</ul></section>
+      <ul class="plain">${[...m.checks.map((c) => c.text), ...m.flags.flatMap(({ v, fl }) => fl.map((f) => `${varLabel(v)}: ${f.text}`)), ...m.its.filter((i) => ['norule', 'nogene'].includes(i.category)).map((i) => `${varLabel(i.v)}: no curated interpretation (${i.category === 'nogene' ? 'gene outside the prototype library' : 'variant not curated'}) — unassessed.`), ...stdLimits()].map((t) => `<li>${esc(t)}</li>`).join('')}</ul></section>
 
     <section class="sum-sec"><h3>8 · Board discussion and sign-off</h3>
       <label class="field no-print"><span>Discussion notes (printed with the summary)</span><textarea id="boardNotes" rows="4" maxlength="2000" placeholder="Questions for the board, clinical context, decisions…">${esc(state.boardNotes)}</textarea></label>
@@ -3260,7 +4128,7 @@ function renderSummary() {
     <section class="sum-sec"><h3>9 · References</h3>
       <ol class="ref-print">${m.refs.map((id) => { const r = REF_BY_ID[id]; return `<li>${esc(refCitation(r))}${r.kind === 'site' ? ' <span class="muted">(address not live-checked)</span>' : ''}</li>`; }).join('')}</ol>
       <p class="small muted">Curated library snapshot ${KB_SNAPSHOT}. PMIDs/DOIs matched in PubMed on that date. Access dates: not retrieved by the application; record your own on the Evidence Library page.</p></section>
-    <footer class="sum-foot">Educational decision-support prototype · not a medical device · sample cases are fictional · no data leaves this browser.</footer>
+    <footer class="sum-foot">Onco NGS Reader ${esc(APP_VERSION)} · library ${KB_SNAPSHOT} · audit trail ${audit.log.length} entries, chain ${auditVerify().ok ? 'intact' : 'BROKEN'}, head ${esc(auditHead().slice(0, 12))} · educational decision-support prototype, not a medical device · sample cases are fictional${state.live.enabled ? ' · live look-ups were enabled in this session' : ' · no data left this browser'}.</footer>
   </article>`;
 }
 
@@ -3280,15 +4148,18 @@ function summaryText() {
   m.its.filter((i) => i.category === 'conditional').forEach((i) => L.push(`- ${varLabel(i.v)}: ONLY IF GERMLINE CONFIRMED — the approved indication requires a germline variant.`));
   L.push('', '4. EVIDENCE CLASSIFICATIONS (curated snapshot; ClinVar/ClinGen/CIViC/OncoKB not queried)');
   m.its.forEach((it) => { const a = classificationAMP(it); L.push(`- ${varLabel(it.v)}: AMP/ASCO/CAP ${a.val || 'not assigned'}; ESCAT ${(!IS_HEME(cs.cancer) && it.ctx && it.match === 'exact' && it.ctx.escat) || 'not curated'}; OncoKB ${(it.ctx && it.match === 'exact' && it.ctx.oncokb) || 'not curated'}`); });
+  const li = liveItems();
+  L.push('', '4b. DATA PROVENANCE', `Library snapshot ${KB_SNAPSHOT}; live-retrieved items: ${li.length}`);
+  li.forEach((i) => L.push(`- ${i.src} · ${i.what} · retrieved ${stamp(i.at)} · ${i.text}`));
   L.push('', '5. THERAPEUTIC IMPLICATIONS');
   const sect = (title, arr) => { if (arr.length) { L.push(title); arr.forEach((o) => L.push(`  - ${o.rx.drug} (${o.it ? varLabel(o.it.v) : o.bm.title}) [${STATUS[o.rx.status].label}] — ${o.rx.indication}${o.warn ? ' (CAUTION: ' + o.warn + ')' : ''}`)); } };
   sect('Approved (this tumour type / tumour-agnostic):', m.approved); sect('Approved only in other tumour types:', m.other); sect('Evolving / investigational:', m.evolving); sect('Not supported / avoid:', m.avoid);
   L.push('', '6. RESISTANCE MARKERS');
   m.resistance.length ? m.resistance.forEach((i) => L.push(`- ${varLabel(i.v)}`)) : L.push('- None curated.');
   L.push('', '7. UNCERTAINTIES AND LIMITATIONS');
-  m.checks.forEach((c) => L.push(`- ${c.text}`)); m.flags.forEach(({ v, fl }) => fl.forEach((f) => L.push(`- ${varLabel(v)}: ${f.text}`))); STD_LIMITS.forEach((t) => L.push(`- ${t}`));
+  m.checks.forEach((c) => L.push(`- ${c.text}`)); m.flags.forEach(({ v, fl }) => fl.forEach((f) => L.push(`- ${varLabel(v)}: ${f.text}`))); stdLimits().forEach((t) => L.push(`- ${t}`));
   if (state.boardNotes) L.push('', '8. DISCUSSION NOTES', state.boardNotes);
-  L.push('', '9. REFERENCES'); m.refs.forEach((id, i) => L.push(`${i + 1}. ${refCitation(REF_BY_ID[id])}`));
+  L.push('', '9. REFERENCES'); L.push(`(App ${APP_VERSION}; audit trail ${audit.log.length} entries; chain head ${auditHead().slice(0, 12)})`); m.refs.forEach((id, i) => L.push(`${i + 1}. ${refCitation(REF_BY_ID[id])}`));
   return L.join('\n');
 }
 
@@ -3302,16 +4173,19 @@ const PAGES = [
   ['actionability', 'Actionability & Targeted Therapies', 'Actionability', renderActionability],
   ['learn', 'Molecular Learning Centre', 'Learn', renderLearn],
   ['evidence', 'Evidence Library', 'Evidence', renderEvidence],
-  ['summary', 'Molecular Tumour Board Summary', 'Tumour Board', renderSummary]
+  ['summary', 'Molecular Tumour Board Summary', 'Tumour Board', renderSummary],
+  ['connect', 'Connections & Audit', 'Connect', renderConnect]
 ];
-function navigate(id) { if (location.hash === '#/' + id) route(); else location.hash = '#/' + id; }
-function currentPage() { const m = location.hash.match(/^#\/([a-z]+)/); return PAGES.some((p) => p[0] === m?.[1]) ? m[1] : 'dashboard'; }
+let hostedRoute = 'dashboard';   // the hosted frame may not support hash navigation, so the page is tracked in memory there
+function navigate(id) { if (HOSTED) { hostedRoute = id; route(); return; } if (location.hash === '#/' + id) route(); else location.hash = '#/' + id; }
+function currentPage() { if (HOSTED) return hostedRoute; const m = location.hash.match(/^#\/([a-z]+)/); return PAGES.some((p) => p[0] === m?.[1]) ? m[1] : 'dashboard'; }
 function route() {
   const id = currentPage(), page = PAGES.find((p) => p[0] === id);
   $$('.page').forEach((s) => { s.hidden = s.id !== 'page-' + id; s.classList.toggle('active', s.id === 'page-' + id); });
   $$('#mainNav a').forEach((a) => { const on = a.dataset.page === id; a.classList.toggle('active', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   document.title = `${page[1]} · Onco NGS Reader`;
   $('#mainNav').classList.remove('open'); $('#menuToggle').setAttribute('aria-expanded', 'false');
+  if (['interpreter', 'actionability', 'summary', 'connect'].includes(id)) auditThrottled('page-' + id, 'page-opened', id, 8000);
   page[3]();
   window.scrollTo({ top: 0, behavior: 'auto' });
   const h = $(`#page-${id} h1`); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
@@ -3333,12 +4207,46 @@ const ACTIONS = {
   goto: (el) => { if (el.dataset.tab) state.ui.learnTab = el.dataset.tab; navigate(el.dataset.page); },
   loadSample: (el) => loadSample(el.dataset.id),
   editVariant: (el) => editVariant(el.dataset.id),
-  deleteVariant: (el) => deleteVariant(el.dataset.id),
+  deleteVariant: (el) => deleteVariant(el.dataset.id, el),
   confirm: () => {
     if (!$('#confirmCheck') || !$('#confirmCheck').checked) return;
-    state.confirmed = true; state.confirmedAt = new Date().toISOString(); saveState(); renderCaseStrip(); renderConfirmPanel(); toast('Findings confirmed. Interpretation is now available.');
+    if (unverifiedExtracted().length) { toast('Verify the extracted entries first.'); renderConfirmPanel(); return; }
+    state.confirmed = true; state.confirmedAt = new Date().toISOString(); saveState(); renderCaseStrip(); renderConfirmPanel();
+    auditAdd('findings-confirmed', `${state.variants.length} variant(s); ${state.variants.filter((v) => v.src === 'extracted').length} PDF-extracted and verified`);
+    toast('Findings confirmed. Interpretation is now available.');
   },
-  removeFile: () => { if (state.file.url) URL.revokeObjectURL(state.file.url); state.file = { name: '', size: 0, valid: null, url: '' }; $('#fileInput').value = ''; renderFileCard(); },
+  removeFile: () => { pdfClose(); state.file = { name: '', size: 0, valid: null, url: '', pages: 0 }; $('#fileInput').value = ''; auditAdd('pdf-removed', 'PDF and extracted text discarded from memory'); renderFileCard(); },
+  verifyVariant: (el) => { const v = state.variants.find((x) => x.id === el.dataset.id); if (!v) return; v.verified = true; saveState(); auditAdd('extracted-verified', varLabel(v)); renderVariantTable(); renderChecklist(); renderConfirmPanel(); toast('Marked as checked against the PDF.'); },
+  pdfPrev: () => { pdfState.page = Math.max(1, pdfState.page - 1); pdfRender(); },
+  pdfNext: () => { if (pdfState.doc) pdfState.page = Math.min(pdfState.doc.numPages, pdfState.page + 1); pdfRender(); },
+  pdfZoomIn: () => { pdfState.scale = Math.min(3, pdfState.scale + 0.25); pdfRender(); },
+  pdfZoomOut: () => { pdfState.scale = Math.max(0.6, pdfState.scale - 0.25); pdfRender(); },
+  pdfGoto: (el) => pdfGoto(el.dataset.p),
+  runExtract: () => runExtraction(),
+  addCands: () => addCandidates(),
+  selectAllCands: () => $$('#extractResult [data-cand]:not(:disabled)').forEach((c) => { c.checked = true; }),
+  applyCaseSug: (el) => applyCaseSuggestion(Number(el.dataset.i)),
+  liveClinvar: (el) => liveAction(el, () => retrieveClinVar(state.variants.find((v) => v.id === el.dataset.id))),
+  liveOncokb: (el) => liveAction(el, () => retrieveOncokb(state.variants.find((v) => v.id === el.dataset.id))),
+  livePubmed: (el) => liveAction(el, () => retrievePubMed(state.variants.find((v) => v.id === el.dataset.id))),
+  liveFda: (el) => liveAction(el, () => retrieveFda(el.dataset.name)),
+  liveTrials: (el) => liveAction(el, () => retrieveTrials(el.dataset.gene)),
+  testConn: (el) => liveAction(el, () => testConnector(el.dataset.key)),
+  auditVerify: () => { const v = auditVerify(); $('#auditResult').textContent = v.ok ? `✓ Chain intact: ${v.count} entries, no entry altered or removed.` : `✗ Chain broken at entry ${v.brokenAt}.`; auditAdd('audit-verified', v.ok ? 'intact' : `broken at ${v.brokenAt}`); },
+  auditCopy: () => copyText(JSON.stringify(audit.log, null, 1), 'Audit trail copied as JSON.'),
+  auditDownload: () => { downloadText(`onco-ngs-audit-${todayISO()}.json`, JSON.stringify(audit.log, null, 1)); auditAdd('audit-exported', 'downloaded'); },
+  protectMake: async () => {
+    const msg = $('#protectMsg'); msg.textContent = 'Encrypting…';
+    try { const out = await protectEncrypt($('#protectPass').value); $('#protectOut').value = out; auditAdd('case-exported', 'passphrase-protected file created'); msg.textContent = '✓ Protected text created. Keep the passphrase safe: it cannot be recovered.'; }
+    catch (e) { msg.textContent = '✗ ' + (e.message || 'Encryption failed.'); }
+  },
+  protectCopy: () => { const v = $('#protectOut').value; if (!v) { toast('Create the protected file first.'); return; } copyText(v, 'Protected text copied.'); },
+  protectDownload: () => { const v = $('#protectOut').value; if (!v) { toast('Create the protected file first.'); return; } downloadText(`onco-ngs-case-${todayISO()}.protected.json`, v); },
+  protectRestore: async () => {
+    const msg = $('#restoreMsg'); msg.textContent = 'Decrypting…';
+    try { const p = await protectDecrypt($('#protectIn').value.trim(), $('#restorePass').value); const chain = restorePayload(p); renderCaseStrip(); renderConnect(); $('#restoreMsg').textContent = `✓ Case restored (${state.variants.length} variant(s)); ${chain}. Review and confirm the findings again.`; }
+    catch (e) { msg.textContent = '✗ ' + (e.message || 'Restore failed.'); }
+  },
   variantCancel: () => clearVariantForm(),
   interpFilter: (el) => { state.ui.interpFilter = el.dataset.key; renderInterpFilters(); renderInterpList(); renderInterpDetail(); },
   selectVariant: (el) => { state.ui.selectedId = el.dataset.id; renderInterpList(); renderInterpDetail(); if (window.innerWidth < 900) $('#interpDetail').scrollIntoView({ behavior: 'smooth', block: 'start' }); },
@@ -3354,13 +4262,25 @@ const ACTIONS = {
   hgvsExample: (el) => { const box = el.closest('.calc'); $('[data-in="s"]', box).value = el.dataset.v; runCalc(box); },
   evCat: (el) => { state.ui.evCat = el.dataset.key; renderEvidence(); },
   copyCite: (el) => { const r = REF_BY_ID[el.dataset.id]; copyText(refCitation(r), 'Citation copied.'); },
-  printSummary: () => window.print(),
-  copySummary: () => copyText(summaryText(), 'Summary copied as plain text.'),
-  resetAll: () => resetAll(),
-  newCase: () => { resetAll(); },
+  printSummary: () => { auditAdd('summary-printed', 'print dialog opened'); window.print(); },
+  copySummary: () => { auditAdd('summary-copied', 'plain-text summary copied'); copyText(summaryText(), 'Summary copied as plain text.'); },
+  resetAll: (el) => resetAll(el),
   themeToggle: () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'),
   menuToggle: () => { const n = $('#mainNav'); const o = n.classList.toggle('open'); $('#menuToggle').setAttribute('aria-expanded', String(o)); }
 };
+/** Run one live look-up with a busy label; refresh the visible results afterwards. */
+async function liveAction(btn, fn) {
+  if (HOSTED || !state.live.enabled) { toast(HOSTED ? 'Not available in the hosted preview: the host blocks outside connections.' : 'Switch on live look-ups first (Connect page).'); return; }
+  if (btn.dataset.busy) return;
+  btn.dataset.busy = '1'; const old = btn.textContent; btn.textContent = 'Retrieving…';
+  try { await fn(); } catch (e) { toast('The look-up failed unexpectedly. Nothing was retrieved.'); }
+  btn.dataset.busy = ''; btn.textContent = old;
+  refreshLiveViews();
+}
+function refreshLiveViews() {
+  const id = currentPage();
+  if (id === 'interpreter') renderInterpDetail(); else if (id === 'actionability') renderActBody(); else if (id === 'connect') renderConnect();
+}
 function copyText(text, msg) {
   const done = () => toast(msg);
   if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
@@ -3374,6 +4294,8 @@ function fallbackCopy(text, done) {
 
 function bindEvents() {
   document.addEventListener('click', (e) => {
+    const link = HOSTED && e.target.closest('a[href^="#/"]');
+    if (link) { e.preventDefault(); navigate(link.getAttribute('href').slice(2)); return; }
     const el = e.target.closest('[data-action]');
     if (el && ACTIONS[el.dataset.action]) { if (el.tagName === 'A') e.preventDefault(); ACTIONS[el.dataset.action](el, e); }
   });
@@ -3384,6 +4306,7 @@ function bindEvents() {
     } else if (t.dataset.ui === 'interpSearch') { state.ui.interpSearch = t.value; renderInterpList(); renderInterpDetail(); }
     else if (t.dataset.ui === 'learnSearch') { state.ui.learnSearch = t.value; rerenderKeepFocus(renderLearn, 'learnSearch'); }
     else if (t.dataset.ui === 'cardSearch') { state.ui.cardSearch = t.value; rerenderKeepFocus(renderLearn, 'cardSearch'); }
+    else if (t.id === 'oncokbUrl') { state.live.oncokbUrl = t.value; saveLiveConfig(); }
     else if (t.id === 'evSearch') { state.ui.evSearch = t.value; rerenderKeepFocus(renderEvidence, 'evSearch'); }
     else if (t.closest('.calc') && t.dataset.in !== undefined) runCalc(t.closest('.calc'));
     else if (t.id === 'boardNotes') { state.boardNotes = t.value; saveState(); const p = $('#boardNotesPrint'); if (p) p.textContent = t.value; }
@@ -3400,6 +4323,9 @@ function bindEvents() {
     else if (t.id === 'actSettingOnly') { state.ui.actSettingOnly = t.checked; renderActBody(); }
     else if (t.id === 'evUsed') { state.ui.evUsed = t.checked; renderEvidence(); }
     else if (t.id === 'fileInput') { handleFile(t.files[0]); }
+    else if (t.id === 'liveToggle') { state.live.enabled = t.checked; auditAdd('live-lookups', t.checked ? 'switched ON for this session' : 'switched OFF'); renderConnect(); }
+    else if (t.id === 'oncokbUrl') { state.live.oncokbUrl = t.value.trim(); saveLiveConfig(); renderConnect(); }
+    else if (t.id === 'protectFile') { const f = t.files[0]; if (f) f.text().then((x) => { $('#protectIn').value = x; $('#restoreMsg').textContent = 'File read. Enter the passphrase and press Decrypt and restore.'; }); }
     else if (t.dataset.access) { const log = accessLog(); if (t.value) log[t.dataset.access] = t.value; else delete log[t.dataset.access]; store.set('localStorage', ACCESS_KEY, log); renderEvidence(); toast('Access date saved in this browser.'); }
     else if (t.dataset.lk) {
       const form = t.closest('.lookup-form'), v = state.variants.find((x) => x.id === form.dataset.vid); if (!v) return;
@@ -3422,9 +4348,10 @@ function bindEvents() {
 }
 
 function init() {
-  loadState();
+  loadState(); loadLiveConfig(); auditLoad();
   setTheme(store.get('localStorage', THEME_KEY, 'light') === 'dark' ? 'dark' : 'light');
   $('#mainNav').innerHTML = PAGES.map(([id, label, short], i) => `<a href="#/${id}" data-page="${id}" title="${esc(label)}"><span class="nav-n">${i + 1}</span>${esc(short)}</a>`).join('');
+  if (HOSTED) $$('[data-action="printSummary"]').forEach((b) => { b.hidden = true; });
   bindEvents(); renderCaseStrip(); route();
 }
-document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

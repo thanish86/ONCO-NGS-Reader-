@@ -31,6 +31,7 @@
   --accent-2: #2f6fc7;
   --grad: linear-gradient(135deg, #5b4bc6 0%, #3f78d1 100%);
   --focus: #3f78d1;
+  color-scheme: light;
 
   --radius: 22px;
   --radius-sm: 14px;
@@ -53,6 +54,7 @@
   --accent: #9d90f2; --accent-2: #7fb0f2;
   --grad: linear-gradient(135deg, #7a6be0 0%, #4f8ae0 100%);
   --focus: #8fb8f5;
+  color-scheme: dark;
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
   --shadow-hover: 0 2px 4px rgba(0, 0, 0, .35), 0 18px 44px rgba(0, 0, 0, .5);
 }
@@ -97,7 +99,7 @@ img, svg { max-width: 100%; }
 
 /* ---------- 3. HEADER & NAVIGATION ---------- */
 .site-header {
-  position: sticky; top: 0; z-index: 50; backdrop-filter: saturate(180%) blur(18px); -webkit-backdrop-filter: saturate(180%) blur(18px);
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; backdrop-filter: saturate(180%) blur(18px); -webkit-backdrop-filter: saturate(180%) blur(18px);
   background: color-mix(in srgb, var(--surface) 78%, transparent); border-bottom: 1px solid var(--line);
 }
 .header-inner { max-width: var(--maxw); margin: 0 auto; padding: 10px 20px; display: flex; align-items: center; gap: 16px; }
@@ -106,7 +108,7 @@ img, svg { max-width: 100%; }
 .logo { display: inline-flex; filter: drop-shadow(0 3px 8px rgba(91, 75, 198, .35)); }
 .nav { display: flex; gap: 2px; margin-left: auto; align-items: center; }
 .nav a {
-  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; color: var(--muted); font-size: .92rem; font-weight: 520;
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; color: var(--muted); font-size: .92rem; font-weight: 520;
   transition: background .2s, color .2s;
 }
 .nav a:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
@@ -202,7 +204,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .field { display: flex; flex-direction: column; gap: 5px; font-size: .88rem; }
 .field > span { color: var(--muted); font-weight: 560; }
 .field.wide { grid-column: span 2; }
-input[type="text"], input[type="number"], input[type="search"], input[type="date"], select, textarea {
+input[type="text"], input[type="number"], input[type="search"], input[type="date"], input[type="password"], input[type="file"], select, textarea {
   font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; width: 100%;
   transition: border-color .2s, box-shadow .2s;
 }
@@ -467,6 +469,25 @@ table.mini th { background: var(--surface-2); font-size: .72rem; text-transform:
 .notes-print { white-space: pre-wrap; border: 1px solid #999; padding: 8px; border-radius: 6px; min-height: 40px; }
 .sign-grid { margin-top: 12px; }
 
+/* ---------- 14b. STAGE 2: PDF VIEWER, LIVE RESULTS, AUDIT ---------- */
+.pdf-viewer { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-2); }
+.pdf-bar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.pdf-bar .spacer { flex: 1; }
+.pdf-canvas-wrap { padding: 12px; max-height: 640px; overflow: auto; text-align: center; }
+.pdf-canvas-wrap canvas { background: #fff; box-shadow: var(--shadow); border-radius: 4px; display: block; margin: 0 auto; }
+.live-zone { margin-top: 10px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: var(--radius-sm); }
+.live-zone .prov { margin: 6px 0; }
+.live-err { background: var(--rose); color: var(--rose-d); padding: 8px 12px; border-radius: 12px; font-size: .88rem; margin: 8px 0; }
+.cv-rec { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 8px 0; background: var(--surface); }
+.stars { color: var(--peach-m); letter-spacing: 1px; }
+.fda-box { margin: 6px 0 10px; }
+.btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.btn.armed { background: var(--rose); color: var(--rose-d); }
+.src-line { word-break: break-word; max-width: 46ch; }
+.pre-text { max-height: 320px; overflow: auto; font-size: .78rem; white-space: pre-wrap; word-break: break-word; }
+.pre-text .pg-head { margin-top: 8px; font-weight: 700; color: var(--accent); }
+.prov { line-height: 1.8; }
+
 /* ---------- 15. FOOTER & TOAST ---------- */
 .site-footer { border-top: 1px solid var(--line); padding: 26px 0 40px; color: var(--muted); font-size: .86rem; }
 .toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 30px); background: #1d1d1f; color: #fff; padding: 11px 20px; border-radius: 999px; font-size: .9rem; opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; z-index: 200; max-width: 90vw; box-shadow: 0 10px 30px rgba(0, 0, 0, .3); }
@@ -474,7 +495,7 @@ table.mini th { background: var(--surface-2); font-size: .72rem; text-transform:
 [data-theme="dark"] .toast { background: #f5f5f7; color: #1d1d1f; }
 
 /* ---------- 16. RESPONSIVE ---------- */
-@media (max-width: 1040px) {
+@media (max-width: 1120px) {
   .menu-btn { display: inline-block; }
   .nav { position: absolute; left: 0; right: 0; top: 100%; flex-direction: column; align-items: stretch; background: var(--surface); border-bottom: 1px solid var(--line); padding: 10px 16px 16px; display: none; box-shadow: var(--shadow); margin: 0; gap: 4px; }
   .nav.open { display: flex; animation: rise .25s both; }

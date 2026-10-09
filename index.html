@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <!--
-  ONCO NGS READER — index.html  (Stage 1: frontend prototype)
+  ONCO NGS READER — index.html  (Stage 2: evidence-connected prototype)
 
   WHAT THIS FILE IS (in plain language)
   This is the "skeleton" of the web page: the headings, forms, buttons and empty
   areas. The look lives in style.css. The behaviour (what happens when you click)
   lives in script.js. Open this file in a browser to run the app.
 
-  PRIVACY: nothing typed or dropped here is sent anywhere. There is no server.
+  PRIVACY: nothing typed or dropped here is sent anywhere unless YOU switch on live look-ups
+  on the Connect page. The optional local proxy in /server is only needed for licensed OncoKB data.
 -->
 <html lang="en" data-theme="light">
 <head>
@@ -34,7 +35,7 @@
       </a>
       <nav id="mainNav" class="nav" aria-label="Main"></nav>
       <div class="header-actions">
-        <span class="badge-proto" title="Stage 1 frontend prototype">Prototype</span>
+        <span class="badge-proto" title="Stage 2 evidence-connected prototype">Prototype</span>
         <button class="icon-btn" id="themeToggle" data-action="themeToggle" aria-label="Switch to dark mode">☾</button>
         <button class="icon-btn menu-btn" id="menuToggle" data-action="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mainNav">☰</button>
       </div>
@@ -225,6 +226,18 @@
       </div>
     </section>
 
+    <!-- ================= 8. CONNECTIONS & AUDIT (Stage 2) ================= -->
+    <section id="page-connect" class="page" hidden>
+      <div class="container">
+        <header class="page-head">
+          <p class="eyebrow">Stage 2 · Connect &amp; protect</p>
+          <h1>Connections &amp; Audit</h1>
+          <p class="lead-sm">Switch live look-ups on or off, see exactly what would be sent, review the tamper-evident audit trail, and protect or restore a case file with a passphrase.</p>
+        </header>
+        <div id="connectRoot"></div>
+      </div>
+    </section>
+
     <!-- ================= 7. TUMOUR BOARD SUMMARY ================= -->
     <section id="page-summary" class="page" hidden>
       <div class="container">
@@ -246,12 +259,14 @@
 
   <footer class="site-footer no-print">
     <div class="container">
-      <p><strong>Onco NGS Reader</strong> · Stage 1 frontend prototype · educational decision support, not a medical device. Interpretations must be verified against the original laboratory report, primary sources and the molecular tumour board. Data stays in this browser tab (session storage) and is erased when the tab closes.</p>
+      <p><strong>Onco NGS Reader</strong> · Stage 2 evidence-connected prototype · educational decision support, not a medical device. Interpretations must be verified against the original laboratory report, primary sources and the molecular tumour board. Data stays in this browser tab (session storage) and is erased when the tab closes. Outside services are contacted only if you switch on live look-ups.</p>
       <p><button class="link-btn" data-action="resetAll">Clear all data now</button></p>
     </div>
   </footer>
 
   <div id="toast" class="toast no-print" role="status" aria-live="polite"></div>
+  <!-- PDF library (bundled, Apache-2.0). Keep the "vendor" folder next to this file. -->
+  <script src="vendor/pdfjs/pdf.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
