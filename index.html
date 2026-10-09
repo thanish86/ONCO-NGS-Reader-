@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<!--
+  ONCO NGS READER — index.html  (Stage 1: frontend prototype)
+
+  WHAT THIS FILE IS (in plain language)
+  This is the "skeleton" of the web page: the headings, forms, buttons and empty
+  areas. The look lives in style.css. The behaviour (what happens when you click)
+  lives in script.js. Open this file in a browser to run the app.
+
+  PRIVACY: nothing typed or dropped here is sent anywhere. There is no server.
+-->
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Onco NGS Reader</title>
+  <meta name="description" content="Educational decision-support prototype for reading cancer NGS reports: variant interpretation, actionability, learning centre, evidence library and tumour board summary.">
+  <meta name="color-scheme" content="light dark">
+  <!-- A tiny inline icon so the browser tab shows a symbol (no file needed) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%236b5bd2'/%3E%3Cpath d='M22 12c0 14 20 14 20 28s-20 14-20 12M42 12c0 14-20 14-20 28' fill='none' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <!-- ============ TOP NAVIGATION ============ -->
+  <header class="site-header no-print">
+    <div class="header-inner">
+      <a class="brand" href="#/dashboard" aria-label="Onco NGS Reader — home">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="30" height="30"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b7bd8"/><stop offset="1" stop-color="#5b9be6"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#lg)"/><path d="M22 11c0 14 20 14 20 28s-20 14-20 12M42 11c0 14-20 14-20 28" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M26 22h12M26 40h12" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".85"/></svg>
+        </span>
+        <span class="brand-name">Onco NGS Reader</span>
+      </a>
+      <nav id="mainNav" class="nav" aria-label="Main"></nav>
+      <div class="header-actions">
+        <span class="badge-proto" title="Stage 1 frontend prototype">Prototype</span>
+        <button class="icon-btn" id="themeToggle" data-action="themeToggle" aria-label="Switch to dark mode">☾</button>
+        <button class="icon-btn menu-btn" id="menuToggle" data-action="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mainNav">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="caseStrip" class="case-strip no-print" aria-live="polite"></div>
+  <div class="proto-banner no-print" role="note">
+    <strong>Educational decision-support prototype.</strong>
+    Not a medical device. Verify every finding against the original report and primary sources. Sample cases are fictional.
+    <strong>Do not enter patient names or identifiers.</strong>
+  </div>
+
+  <main id="main" tabindex="-1">
+
+    <!-- ================= 1. DASHBOARD ================= -->
+    <section id="page-dashboard" class="page" hidden>
+      <div class="container"><div id="dashboardRoot"></div></div>
+    </section>
+
+    <!-- ================= 2. UPLOAD NGS REPORT ================= -->
+    <section id="page-upload" class="page" hidden>
+      <div class="container">
+        <header class="page-head">
+          <p class="eyebrow">Step 1 of 4 · Add &amp; confirm</p>
+          <h1>Upload NGS Report</h1>
+          <p class="lead-sm">Drop in the report PDF to read it side by side, then enter or check each finding. Nothing is interpreted until you confirm the findings are correct.</p>
+        </header>
+
+        <!-- Sample cases -->
+        <div class="card section-tight">
+          <div class="card-head"><h3>Try a fictional sample report</h3><span class="muted small">Pre-fills the forms below</span></div>
+          <div id="sampleButtons" class="sample-pills"></div>
+        </div>
+
+        <!-- PDF drop zone -->
+        <div class="card section-tight">
+          <div class="card-head"><h3>1 · Report PDF <span class="tag">viewed locally</span></h3></div>
+          <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Drop a PDF here or press Enter to choose a file">
+            <div class="dz-icon" aria-hidden="true">⇪</div>
+            <p class="dz-title">Drag &amp; drop the NGS report PDF here</p>
+            <p class="muted small">or click to choose a file · the PDF is displayed in your browser only</p>
+            <input type="file" id="fileInput" accept="application/pdf,.pdf" hidden>
+          </div>
+          <div id="fileCard"></div>
+        </div>
+
+        <!-- Case details -->
+        <div class="card section-tight">
+          <div class="card-head"><h3>2 · Case details</h3><span class="muted small">Editable · use a neutral label, never a name or ID</span></div>
+          <div class="form-grid">
+            <label class="field"><span>Case label (no identifiers)</span><input type="text" id="c_label" data-case="label" maxlength="60" placeholder="e.g. Case 1" autocomplete="off"></label>
+            <label class="field"><span>Cancer type</span><select id="c_cancer" data-case="cancer"></select></label>
+            <label class="field"><span>Histology / diagnosis</span><input type="text" id="c_histology" data-case="histology" maxlength="100" placeholder="e.g. Lung adenocarcinoma" autocomplete="off"></label>
+            <label class="field"><span>Stage / extent</span><input type="text" id="c_stage" data-case="stage" maxlength="30" placeholder="e.g. IV" autocomplete="off"></label>
+            <label class="field wide"><span>Disease setting (used to match evidence)</span><select id="c_setting" data-case="setting"></select></label>
+            <label class="field wide"><span>Prior systemic therapy</span><input type="text" id="c_priorTx" data-case="priorTx" maxlength="160" placeholder="e.g. Osimertinib 18 months" autocomplete="off"></label>
+            <label class="field"><span>Specimen</span><select id="c_specimen" data-case="specimen"></select></label>
+            <label class="field"><span>Assay / panel</span><input type="text" id="c_assay" data-case="assay" maxlength="120" placeholder="Name of assay" autocomplete="off"></label>
+            <label class="field"><span>Tumour purity (%)</span><input type="number" id="c_purity" data-case="purity" min="0" max="100" step="1" placeholder="e.g. 60"></label>
+            <label class="field"><span>Germline testing</span><select id="c_germline" data-case="germline"></select></label>
+            <label class="field wide"><span>Notes from the report (e.g. limitations, comments)</span><textarea id="c_notes" data-case="notes" rows="2" maxlength="500" placeholder="Anything the report states about quality, limits or missing data"></textarea></label>
+          </div>
+          <h4 class="sub-title">Case-level biomarkers</h4>
+          <div class="form-grid">
+            <label class="field"><span>MSI status</span><select id="c_msi" data-case="msi"><option value="unknown">Not reported</option><option value="MSS">Microsatellite-stable (MSS)</option><option value="MSI-H">MSI-high</option></select></label>
+            <label class="field"><span>MMR immunohistochemistry</span><select id="c_mmr" data-case="mmr"><option value="unknown">Not reported</option><option value="pMMR">Proficient (pMMR)</option><option value="dMMR">Deficient (dMMR)</option></select></label>
+            <label class="field"><span>TMB (mutations / Mb)</span><input type="number" id="c_tmb" data-case="tmb" min="0" step="0.1" placeholder="e.g. 8"></label>
+            <label class="field"><span>HRD</span><select id="c_hrd" data-case="hrd"><option value="unknown">Not reported</option><option value="positive">Positive</option><option value="negative">Negative</option></select></label>
+            <label class="field"><span>PD-L1 (as reported)</span><input type="text" id="c_pdl1" data-case="pdl1" maxlength="60" placeholder="e.g. TPS 10%" autocomplete="off"></label>
+            <label class="field"><span>HER2 (IHC/ISH, as reported)</span><input type="text" id="c_her2" data-case="her2" maxlength="60" placeholder="e.g. IHC 3+" autocomplete="off"></label>
+          </div>
+        </div>
+
+        <!-- Variants -->
+        <div class="card section-tight" id="variantFormCard">
+          <div class="card-head"><h3>3 · Molecular alterations</h3><span class="muted small">Enter exactly what the report states</span></div>
+          <form id="variantForm" autocomplete="off" novalidate>
+            <h4 class="sub-title" id="variantFormTitle">Add a variant</h4>
+            <div class="form-grid">
+              <label class="field"><span>Gene</span><input type="text" id="v_gene" list="geneList" maxlength="30" placeholder="e.g. EGFR  (or EML4::ALK)" spellcheck="false"></label>
+              <label class="field"><span>Mutation type</span><select id="v_type"></select></label>
+              <label class="field"><span>Protein change (p.)</span><input type="text" id="v_variant" maxlength="60" placeholder="e.g. p.Leu858Arg or L858R" spellcheck="false"></label>
+              <label class="field"><span>cDNA change (c.)</span><input type="text" id="v_hgvsC" maxlength="60" placeholder="e.g. c.2573T>G" spellcheck="false"></label>
+              <label class="field"><span>Reference transcript</span><input type="text" id="v_transcript" maxlength="30" placeholder="e.g. NM_005228.5" spellcheck="false"></label>
+              <label class="field"><span>VAF (%)</span><input type="number" id="v_vaf" min="0" max="100" step="0.1" placeholder="e.g. 38"></label>
+              <label class="field"><span>Read depth (×)</span><input type="number" id="v_depth" min="0" step="1" placeholder="e.g. 800"></label>
+              <label class="field"><span>Origin</span><select id="v_origin"></select></label>
+              <label class="field" id="fld_partner" hidden><span>Fusion partner (5′ gene)</span><input type="text" id="v_partner" maxlength="30" placeholder="e.g. EML4" spellcheck="false"></label>
+              <label class="field" id="fld_cn" hidden><span>Copy number</span><input type="number" id="v_cn" min="0" step="0.1" placeholder="e.g. 9"></label>
+              <label class="field wide"><span>Classification stated on the report (optional, typed as written)</span><input type="text" id="v_reported" maxlength="120" placeholder="e.g. Tier I / pathogenic — as printed on the report" ></label>
+            </div>
+            <datalist id="geneList"></datalist>
+            <p id="typeInfo" class="type-info" hidden></p>
+            <p id="variantError" class="form-error" role="alert"></p>
+            <div class="btn-row">
+              <button class="btn btn-primary" type="submit" id="variantSubmit">Add variant</button>
+              <button class="btn btn-ghost" type="button" id="variantCancel" data-action="variantCancel" hidden>Cancel edit</button>
+            </div>
+          </form>
+          <h4 class="sub-title">Extracted / entered findings</h4>
+          <div id="variantTable"></div>
+        </div>
+
+        <!-- Review & confirm -->
+        <div class="card section-tight">
+          <div class="card-head"><h3>4 · Review missing and uncertain information</h3></div>
+          <div id="checklist"></div>
+        </div>
+        <div class="card section-tight">
+          <div class="card-head"><h3>5 · Clinician confirmation</h3></div>
+          <div id="confirmPanel"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 3. VARIANT INTERPRETER ================= -->
+    <section id="page-interpreter" class="page" hidden>
+      <div class="container">
+        <header class="page-head">
+          <p class="eyebrow">Step 2 of 4 · Interpret</p>
+          <h1>Variant Interpreter</h1>
+          <p class="lead-sm">Biology, nomenclature, classification and clinical relevance for each alteration — with every database status stated honestly.</p>
+        </header>
+        <div id="interpGate"></div>
+        <div id="interpWrap" hidden>
+          <div class="toolbar">
+            <label class="search"><span class="sr-only">Search variants</span><input type="search" id="interpSearch" data-ui="interpSearch" placeholder="Search gene or variant…" autocomplete="off"></label>
+            <label class="select-wrap"><span class="sr-only">Filter by mutation type</span><select id="interpType"></select></label>
+            <div id="interpFilters" class="pills" role="group" aria-label="Filter by category"></div>
+          </div>
+          <div class="split">
+            <aside id="interpList" class="vlist" aria-label="Variants"></aside>
+            <article id="interpDetail" class="card detail" aria-live="polite"></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 4. ACTIONABILITY ================= -->
+    <section id="page-actionability" class="page" hidden>
+      <div class="container">
+        <header class="page-head">
+          <p class="eyebrow">Step 3 of 4 · Act</p>
+          <h1>Actionability &amp; Targeted Therapies</h1>
+          <p class="lead-sm">Approved, tumour-agnostic, other-tumour, evolving, investigational and unsupported options — each checked against your tumour type and disease setting.</p>
+        </header>
+        <div id="actGate"></div>
+        <div id="actWrap" hidden>
+          <div id="actTabs" class="tabs" role="tablist" aria-label="Actionability sections"></div>
+          <div id="actFilterBar" class="toolbar">
+            <div id="actFilters" class="pills" role="group" aria-label="Filter by status"></div>
+            <label class="select-wrap"><span class="sr-only">Filter by gene</span><select id="actGene"></select></label>
+            <label class="switch"><input type="checkbox" id="actSettingOnly"> <span>Hide options that do not match my disease setting</span></label>
+          </div>
+          <div id="actRoot"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 5. LEARNING CENTRE ================= -->
+    <section id="page-learn" class="page" hidden>
+      <div class="container">
+        <header class="page-head">
+          <p class="eyebrow">Learn</p>
+          <h1>Molecular Learning Centre</h1>
+          <p class="lead-sm">From DNA to dispatch: simple explanations first, advanced oncology next. Memory hooks, exam traps, calculators, flash-cards and a quiz.</p>
+        </header>
+        <div id="learnTabs" class="tabs" role="tablist" aria-label="Learning sections"></div>
+        <div id="learnRoot"></div>
+      </div>
+    </section>
+
+    <!-- ================= 6. EVIDENCE LIBRARY ================= -->
+    <section id="page-evidence" class="page" hidden>
+      <div class="container">
+        <header class="page-head">
+          <p class="eyebrow">Sources</p>
+          <h1>Evidence Library</h1>
+          <p class="lead-sm">Primary sources behind the app. Papers were verified in PubMed; web addresses are marked as not live-checked; nothing here claims a database was queried.</p>
+        </header>
+        <div class="toolbar">
+          <label class="search"><span class="sr-only">Search sources</span><input type="search" id="evSearch" placeholder="Search title, author, PMID, DOI…" autocomplete="off"></label>
+          <div id="evPills" class="pills" role="group" aria-label="Filter by category"></div>
+          <label class="switch"><input type="checkbox" id="evUsed"> <span>Only sources used in the current case</span></label>
+        </div>
+        <div id="evRoot"></div>
+      </div>
+    </section>
+
+    <!-- ================= 7. TUMOUR BOARD SUMMARY ================= -->
+    <section id="page-summary" class="page" hidden>
+      <div class="container">
+        <header class="page-head no-print">
+          <p class="eyebrow">Step 4 of 4 · Summarise</p>
+          <h1>Molecular Tumour Board Summary</h1>
+          <p class="lead-sm">A print-ready summary of confirmed findings, evidence, treatment implications, resistance markers and uncertainties.</p>
+        </header>
+        <div id="sumGate"></div>
+        <div id="summaryRoot" hidden></div>
+        <div class="btn-row no-print sum-actions">
+          <button class="btn btn-primary" data-action="printSummary">Print / Save as PDF</button>
+          <button class="btn btn-secondary" data-action="copySummary">Copy as plain text</button>
+          <button class="btn btn-ghost" data-action="goto" data-page="upload">Edit case</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer no-print">
+    <div class="container">
+      <p><strong>Onco NGS Reader</strong> · Stage 1 frontend prototype · educational decision support, not a medical device. Interpretations must be verified against the original laboratory report, primary sources and the molecular tumour board. Data stays in this browser tab (session storage) and is erased when the tab closes.</p>
+      <p><button class="link-btn" data-action="resetAll">Clear all data now</button></p>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast no-print" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>
